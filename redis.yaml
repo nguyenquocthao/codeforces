@@ -1,0 +1,5 @@
+architecture: standalone
+
+master:
+  extraFlags:
+    - "--maxmemory-policy=allkeys-lru"

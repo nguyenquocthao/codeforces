@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -74,34 +73,49 @@ func Min[T int | float32 | string | int64](args ...T) T {
 	return res
 }
 
-func gcd(a, b int) int {
-	for b > 0 {
-		a, b = b, a%b
+func Sum[T int | float32 | int64](args ...T) T {
+	var res T
+	for _, v := range args {
+		res += v
 	}
-	return a
+	return res
 }
 
-func run(a, b []int) int {
-	sort.Ints(a)
-	sort.Ints(b)
-	i, j := 0, 0
-	n := len(a)
-	for j < n {
-		if a[i] <= b[j] {
-			i, j = i+1, j+1
-		} else {
-			j += 1
-		}
+func run(data []string) bool {
+	m, n := len(data), len(data[0])
+	rowhas := func(i int, ch byte) bool {
+		return strings.Contains(data[i], string(ch))
 	}
-	return n - i
+	colhas := func(j int, ch byte) bool {
+		for i := 0; i < m; i++ {
+			if data[i][j] == ch {
+				return true
+			}
+		}
+		return false
+	}
+	check := func(ch byte) bool {
+		return rowhas(0, ch) && rowhas(m-1, ch) && colhas(0, ch) && colhas(n-1, ch)
+	}
+	return check('B') || check('W')
 }
 
 func main() {
+	// ntest := 1
 	ntest := readInt()
-
+	// debug := ntest == 10000 && false
+	// startat := 18
 	for nt := 0; nt < ntest; nt++ {
-		readInt()
-		fmt.Println(run(readSliceInt(), readSliceInt()))
+		l := readSliceInt()
+		data := make([]string, l[0])
+		for i := 0; i < l[0]; i++ {
+			data[i] = readString()
+		}
+		if run(data) {
+			fmt.Println("YES")
+		} else {
+			fmt.Println("NO")
+		}
 
 	}
 

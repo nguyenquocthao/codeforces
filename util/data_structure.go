@@ -289,3 +289,47 @@ func RangeMinimumQuery(data []int) QueryRange {
 	return &rmqQuery{query}
 	// return the query range
 }
+
+type FenwickTree struct {
+	A    []int
+	Tree []int
+}
+
+func (t *FenwickTree) Update(i, v int) {
+	if t.A[i] == v {
+		return
+	}
+	i += 1
+	added := v - t.A[i]
+	t.A[i] += added
+	for i < len(t.Tree) {
+		t.Tree[i] += added
+		i += i & -i
+	}
+}
+
+func (t *FenwickTree) Sum(i int) int {
+	res := 0
+	for i > 0 {
+		res += t.Tree[i]
+		i -= i & -i
+	}
+	return res
+}
+
+func (t *FenwickTree) Range(i, j int) int {
+	return t.Sum(j+1) - t.Sum(i)
+}
+
+func NewFenwickTree(a []int) *FenwickTree {
+	res := &FenwickTree{}
+	res.A = a
+	res.Tree = append([]int{0}, a...)
+	for i := 1; i < len(res.Tree); i++ {
+		j := i + (i & -i)
+		if j < len(res.Tree) {
+			res.Tree[j] += res.Tree[i]
+		}
+	}
+	return res
+}

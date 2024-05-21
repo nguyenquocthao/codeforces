@@ -70,6 +70,14 @@ func Min[T int | float32 | string | int64](args ...T) T {
 	return res
 }
 
+func Sum[T int | float32 | int64](args ...T) T {
+	var res T
+	for _, v := range args {
+		res += v
+	}
+	return res
+}
+
 func abs(v int) int {
 	if v < 0 {
 		return -v
@@ -197,6 +205,7 @@ func pow(x, n int64) int64 {
 func mod_inverse(x int64) int64 {
 	return pow(x, MOD-2)
 }
+
 func comb(n, k int64) int64 {
 	if n < 0 || k > n {
 		return 0
@@ -351,6 +360,14 @@ func Filter[T any](l []T, f func(v T) bool) []T {
 	return res
 }
 
+func Keys[K comparable, V any](m map[K]V) []K {
+	res := []K{}
+	for k := range m {
+		res = append(res, k)
+	}
+	return res
+}
+
 func divceil(a, b int) int {
 	res := a / b
 	if a%b > 0 {
@@ -418,4 +435,24 @@ func mainwithtestcase() {
 
 	}
 
+}
+
+func Unique[T comparable](l []T) []T {
+	m := map[T]bool{}
+	for _, v := range l {
+		m[v] = true
+	}
+	res := []T{}
+	for v := range m {
+		res = append(res, v)
+	}
+	return res
+}
+
+func Repeat[T any](v T, n int) []T {
+	res := make([]T, n)
+	for i := 0; i < n; i++ {
+		res[i] = v
+	}
+	return res
 }

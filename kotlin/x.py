@@ -1,71 +1,68 @@
-from collections import defaultdict
-from typing import List
+import bisect
+from itertools import product
 
-class Tree:
-    def __init__(self, parent:List[int], mask:int):
-        n = len(parent)
-        mp, mc, mtrue = {}, defaultdict(list), list(range(n)) 
-        def gettrue(i):
-            if i==0: return 0
-            if mask&(1<<mtrue[i]) == 0: 
-                mtrue[i] = gettrue(parent[i])
-            return mtrue[i]
-        for i,p in enumerate(parent):
-            if i==0 or mask&(1<<i) == 0: continue
-            p = gettrue(p)
-            mp[i] = p
-            mc[p].append(i)
-        self.mparent, self.mchild = mp, mc
-    def get_descendants(self, i:int) -> int:
-        res = 1<<i
-        for j in self.mchild[i]: res |= self.get_descendants(j)
+cached1=[2]
+for i in range(1, 20):
+    cached1.append(cached1[-1]+pow(3,i))
+print(cached1)
+
+def solve1(n):
+    i = bisect.bisect_right(cached1,n)-1
+    return cached1[i]
+
+# print(solve1(15))
+for i in range(2,30):
+    print("solve1", i, solve1(i))
+
+
+def solve2(data):
+    m,n =len(data), len(data[0])
+    marked=[[0]*n for _ in range(m)]
+    islands = [0]
+    def nb(i,j):
+        for i2,j2 in ((i+1,j),(i-1,j),(i,j+1),(i,j-1)):
+            if 0<=i2<m and 0<=j2<n: yield i2,j2
+    def markisland(i,j):
+        if marked[i][j]>0: return 0
+        marked[i][j] = len(islands)
+        res=1
+        for i2,j2 in nb(i,j):
+            if data[i2][j2]==1: res += markisland(i2,j2)
         return res
-    def get_ancestors(self, i:int) -> int:
-        res = 0
-        while True:
-            i = self.mparent[i]
-            if i==0: break
-            res |= 1<<i            
-        return res
-    
-def run(a:List[int], b:List[int]):
-    a,b = [0] + [v-1 for v in a], [0] + [v-1 for v in b]
-    n = len(a)
-    def dp(mask):
-        if mask.bit_count()<=2: return 0
-        treea, treeb = Tree(a, mask), Tree(b,mask)
-        # if len(treea.mchild[0])==0: return 0
-        x = treea.mchild[0][0]
-        mask -= 1<<x
-        desa, desb = treea.get_descendants(x) - (1<<x), treeb.get_descendants(x) - (1<<x)
-        rm = treeb.get_ancestors(x) | (desa ^ desb)
-        if rm == 0:
-            # only descentdant of x / other
-            return dp(desa) + dp(mask - desa)
-        res = rm.bit_count()
-        common = desa & desb
-        res += dp(common) + dp(mask & ~rm & ~common)
-        return min(res, 1 + dp(mask))
-    return dp((1<<n)-1)
+    for i,j in product(range(m),range(n)):
+        if data[i][j]==1 and marked[i][j]==0:
+            islands.append(markisland(i,j))
+    res=0
+    print(islands, marked)
+    for i,j in product(range(m),range(n)):
+        if data[i][j]==0:
+            nbislands = set(marked[i2][j2] for i2,j2 in nb(i,j))
+            res = max(res, 1 +sum(islands[ind] for ind in nbislands))
+    return res
 
-# print(2*run([4, 7, 10, 6, 2, 9, 7, 1, 1], [1, 2, 10, 3, 4, 6, 6, 5, 5]))
+data2 = [[1,0,1,0,1,1],
+         [1,0,1,0,1,1],
+         [1,1,1,0,0,0],
+         [0,0,0,1,1,1],
+         [1,1,0,0,1,0],
+         [1,1,1,0,1,1]]
+print(solve2(data2))
 
-with open('x.txt','w') as f:
-    n, q = 200000, 200000
-    print(n,q, file=f)
-    print(' '.join(['10000']*n), file=f)
-    print(' '.join(['1']*n), file=f)
-    for i in range(q):
-        print(i+1, n, file=f)
+cached3=[0]*15
+for i in range(1, 15):
+    # there are 9 1-digit numbers, 90 2-digit numbers, 900 3-digit numbers
+    cached3[i] = cached3[i-1] + 9*i*pow(10,i-1)
+print(cached3)
+
+def solve3(k):
+    i=bisect.bisect_left(cached3, k) - 1
+    k-=cached3[i]
+    k-=1
+    start,offset = divmod(k, i+1)
+    start += pow(10, i)
+    # print(start, offset)
+    return (str(start)+str(start+1)+str(start+2)+str(start+3))[offset:offset+4]
 
 
-
-
-
-
-
-
-
-     
-
-                
+for i in range(1,30):
+    print("solve3", i, solve3(i))

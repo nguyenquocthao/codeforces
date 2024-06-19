@@ -5,20 +5,33 @@ import (
 	"math/bits"
 )
 
-type UnionFind[T comparable] map[T]T
+type UnionFind []int
 
-func (u UnionFind[T]) Find(x T) T {
-	if v, ok := u[x]; !ok {
-		u[x] = x
-	} else if v != x {
-		u[x] = u.Find(v)
+func (u UnionFind) Find(x int) int {
+	if u[x] != x {
+		u[x] = u.Find(u[x])
 	}
 	return u[x]
 }
 
-func (u UnionFind[T]) Union(x, y T) {
+func (u UnionFind) Union(x, y int) {
 	u[u.Find(y)] = u.Find(x)
 }
+
+// type UnionFind[T comparable] map[T]T
+
+// func (u UnionFind[T]) Find(x T) T {
+// 	if v, ok := u[x]; !ok {
+// 		u[x] = x
+// 	} else if v != x {
+// 		u[x] = u.Find(v)
+// 	}
+// 	return u[x]
+// }
+
+// func (u UnionFind[T]) Union(x, y T) {
+// 	u[u.Find(y)] = u.Find(x)
+// }
 
 type Stack[T any] struct {
 	data []T

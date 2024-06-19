@@ -7,8 +7,11 @@ import (
 	"math/big"
 	"os"
 	"reflect"
+	"runtime"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var reader = bufio.NewReader(os.Stdin)
@@ -305,6 +308,10 @@ func gcd(a, b int) int {
 	return a
 }
 
+func lcm(a, b int) int {
+	return a * (b / gcd(a, b))
+}
+
 // func Sum[T bool | int | int64 | float64](l []T) T {
 // 	var res T
 // 	for _, v := range l {
@@ -442,7 +449,7 @@ func Unique[T comparable](l []T) []T {
 	for _, v := range l {
 		m[v] = true
 	}
-	res := []T{}
+	res := make([]T, 0, len(l))
 	for v := range m {
 		res = append(res, v)
 	}
@@ -455,4 +462,106 @@ func Repeat[T any](v T, n int) []T {
 		res[i] = v
 	}
 	return res
+}
+
+func _less[T any](a, b T) bool {
+	return lessHelper(reflect.ValueOf(a), reflect.ValueOf(b))
+}
+
+func lessHelper(a, b reflect.Value) bool {
+	if a.Kind() != b.Kind() {
+		panic("cannot compare different kinds")
+	}
+
+	switch a.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return a.Int() < b.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return a.Uint() < b.Uint()
+	case reflect.Float32, reflect.Float64:
+		return a.Float() < b.Float()
+	case reflect.String:
+		return a.String() < b.String()
+	case reflect.Slice, reflect.Array:
+		minLen := a.Len()
+		if b.Len() < minLen {
+			minLen = b.Len()
+		}
+		for i := 0; i < minLen; i++ {
+			if lessHelper(a.Index(i), b.Index(i)) {
+				return true
+			}
+			if lessHelper(b.Index(i), a.Index(i)) {
+				return false
+			}
+		}
+		return a.Len() < b.Len()
+	default:
+		panic("unsupported type")
+	}
+}
+
+// CustomSort function that sorts a slice based on a key function
+func CustomSort[T any, X any](l []T, keyf func(v T) X) {
+	sort.Slice(l, func(i, j int) bool {
+		return _less(keyf(l[i]), keyf(l[j]))
+		// ki, kj := keyf(l[i]), keyf(l[j])
+		// switch k := (any)(ki).(type) {
+		// case []constraints.Ordered:
+		// 	return _lessSlice(k, keyf(l[j]).([]constraints.Ordered))
+		// default:
+		// 	return _less(ki, kj)
+		// }
+	})
+}
+
+func LogTime(initt time.Time) {
+	_, _, line, ok := runtime.Caller(1)
+	if !ok {
+		fmt.Println("Could not get caller information")
+		return
+	}
+	fmt.Println(line, time.Now().Sub(initt))
+}
+
+var factors = make([][]int, 1000001)
+
+func init() {
+	for i := 2; i < len(factors); i++ {
+		if len(factors[i]) > 0 {
+			continue
+		}
+		for j := i; j < len(factors); j += i {
+			factors[j] = append(factors[j], i)
+		}
+	}
+}
+
+func kmp(s string) []int {
+	table, i := []int{0}, 0
+	for _, ch := range s[1:] {
+		for i > 0 && byte(ch) != s[i] {
+			i = table[i-1]
+		}
+		if byte(ch) == s[i] {
+			i += 1
+		}
+		table = append(table, i)
+	}
+	return table
+}
+
+func zfunction(s string) []int {
+	n := len(s)
+	z, left, right := make([]int, n), 0, 0
+	for i := 1; i < n; i++ {
+		z[i] = Max(0, Min(right-i, z[i-left]))
+		for i+z[i] < n && s[i+z[i]] == s[z[i]] {
+			z[i] += 1
+		}
+		if i+z[i] > right {
+			left, right = i, i+z[i]
+		}
+	}
+	return z
 }

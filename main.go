@@ -53,7 +53,7 @@ func printSlice[T any](l []T) {
 	fmt.Println(strings.Join(output, " "))
 }
 
-func Max[T int | float32 | string | int64](args ...T) T {
+func Max[T int | float32 | string | int64 | byte](args ...T) T {
 	res := args[0]
 	for i := 1; i < len(args); i++ {
 		if args[i] > res {
@@ -63,7 +63,7 @@ func Max[T int | float32 | string | int64](args ...T) T {
 	return res
 }
 
-func Min[T int | float32 | string | int64](args ...T) T {
+func Min[T int | float32 | string | int64 | byte](args ...T) T {
 	res := args[0]
 	for i := 1; i < len(args); i++ {
 		if args[i] < res {
@@ -73,49 +73,30 @@ func Min[T int | float32 | string | int64](args ...T) T {
 	return res
 }
 
-func Sum[T int | float32 | int64](args ...T) T {
-	var res T
-	for _, v := range args {
-		res += v
+// const MAXX = (1 << 31) - 1
+
+func Unique[T comparable](l []T) []T {
+	m := map[T]bool{}
+	for _, v := range l {
+		m[v] = true
+	}
+	res := make([]T, 0, len(l))
+	for v := range m {
+		res = append(res, v)
 	}
 	return res
 }
 
-func run(data []string) bool {
-	m, n := len(data), len(data[0])
-	rowhas := func(i int, ch byte) bool {
-		return strings.Contains(data[i], string(ch))
-	}
-	colhas := func(j int, ch byte) bool {
-		for i := 0; i < m; i++ {
-			if data[i][j] == ch {
-				return true
-			}
-		}
-		return false
-	}
-	check := func(ch byte) bool {
-		return rowhas(0, ch) && rowhas(m-1, ch) && colhas(0, ch) && colhas(n-1, ch)
-	}
-	return check('B') || check('W')
+func run(a, b, c, d []int64) []int64 {
+
 }
 
 func main() {
-	// ntest := 1
-	ntest := readInt()
-	// debug := ntest == 10000 && false
-	// startat := 18
+	// ntest := readInt()
+	ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt()
-		data := make([]string, l[0])
-		for i := 0; i < l[0]; i++ {
-			data[i] = readString()
-		}
-		if run(data) {
-			fmt.Println("YES")
-		} else {
-			fmt.Println("NO")
-		}
+		readSliceInt()
+		printSlice(run(readSliceInt64(), readSliceInt64(), readSliceInt64(), readSliceInt64()))
 
 	}
 

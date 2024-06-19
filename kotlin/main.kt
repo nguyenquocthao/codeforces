@@ -1,5 +1,4 @@
 import java.util.*
-import kotlin.collections.mutableListOf
 import kotlin.math.*
 
 inline fun <reified T> readSlice(): List<T> {
@@ -24,7 +23,16 @@ fun myPrint(vararg args: Any?) {
     println(args.joinToString(" "))
 }
 
-// const val MOD = 998244353L
+fun main() {
+    initFAC()
+    val (n,k) = readSlice<Long>()
+    myPrint(*run(n,k).toTypedArray())
+    // repeat(readInt()) {
+    //     readInt()
+    //     println(run(readSlice<Long>()))
+
+    // }
+}
 
 const val MOD = 1000000007L
 // const val maxn = 1000000
@@ -78,25 +86,18 @@ fun mod(v:Long ) :Long {
 	return res
 }
 
-// 1 0 0 0
-// 0 0 0 1
-
-
-fun main(){
-    initFAC()
-    var (n,k) = readSlice<Long>()
-    val res = LongArray(n.toInt()+1){0L}
-    res[0] = comb(2*n-2, k)
-    for (i in 1 until n.toInt()){
-        res[i] = mod(2*comb(n-i-1, k-1) + (n-i-1)*comb(n-i-2, k-2))
-        res[0] = mod(res[0]-res[i])
+fun run(n:Long, k:Long):LongArray{
+    var b0 = comb(2*n-2, k)
+    // myPrint(89, n, k, b0)
+    var res = LongArray(n.toInt()+1){0}
+    for ( i in 1 until n.toInt()){
+        res[i] = mod(2*comb(n-i.toLong()-1, k-1) + (n-i-1)*comb(n-i.toLong()-2, k-2))
         if (res[i]==0L){
             break
+        } else {
+            b0 = mod(b0-res[i])
         }
     }
-    println(res.joinToString(" "))
-
-
-
-
+    res[0]=b0
+    return res
 }

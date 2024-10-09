@@ -18,6 +18,16 @@ func (u UnionFind) Union(x, y int) {
 	u[u.Find(y)] = u.Find(x)
 }
 
+func (u UnionFind) NGroup() int {
+	res := 0
+	for i, v := range u {
+		if i == v {
+			res++
+		}
+	}
+	return res
+}
+
 // type UnionFind[T comparable] map[T]T
 
 // func (u UnionFind[T]) Find(x T) T {
@@ -36,6 +46,14 @@ func (u UnionFind) Union(x, y int) {
 type Stack[T any] struct {
 	data []T
 	i    int
+}
+
+func (s *Stack[T]) Top() T {
+	return s.data[s.i-1]
+}
+
+func (s *Stack[T]) Len() int {
+	return s.i
 }
 
 func (s *Stack[T]) Push(v T) {

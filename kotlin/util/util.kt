@@ -32,6 +32,13 @@ fun bitLength(v:Int):Int{
     return 32 - v.countLeadingZeroBits()
 }
 
+fun bitLength64(v:Long):Int{
+    if (v==0L){
+        return 0
+    }
+    return 64 - v.countLeadingZeroBits()
+}
+
 
 fun modpos(a:Int,b:Int):Int{
     var x = a%b
@@ -105,4 +112,20 @@ fun mod(v:Long ) :Long {
 		res += MOD
 	}
 	return res
+}
+
+fun bsearch(lo:Int, hi:Int, f:(Int)->Boolean):Int{
+    var l = lo
+    var r = hi-1
+    var res = hi
+    while (l<=r){
+        var mid = (l+r)/2
+        if (f(mid)){
+            res=mid
+            r=mid-1
+        } else {
+            l=mid+1
+        }
+    }
+    return res
 }

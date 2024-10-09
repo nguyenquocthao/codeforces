@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"runtime"
 	"time"
 
@@ -11,7 +12,9 @@ import (
 )
 
 var (
-	db *gorm.DB
+	db           *gorm.DB
+	PASS         = url.QueryEscape("FBr15tWrIBCxpB<Pm2X<7DPGe*:X")
+	DATABASE_URL = "postgres://postgres:" + PASS + "@common-postgres-db.cluster-cjqwi4ysiv1m.ap-southeast-1.rds.amazonaws.com:5432/skills"
 )
 
 // const (
@@ -19,7 +22,10 @@ var (
 // )
 
 const (
-	DATABASE_URL = "postgres://skills:w2mhUEpjIuFW2ukSKw3K9lTNt1eabq5k@localhost:5435/skills"
+
+// DATABASE_URL = "postgres://skills:w2mhUEpjIuFW2ukSKw3K9lTNt1eabq5k@localhost:5435/skills"
+// DATABASE_URL = "postgres://skills:w2mhUEpjIuFW2ukSKw3K9lTNt1eabq5k@localhost:5435/skills"
+
 )
 
 func GetDb() *gorm.DB {
@@ -83,7 +89,7 @@ func Convert[T any](v interface{}) T {
 // 	return &x
 // }
 
-type PubIntents struct {
+type Intents struct {
 	Skillid     string
 	Intentid    string
 	Timestamp   *time.Time
@@ -93,5 +99,28 @@ type PubIntents struct {
 	Language    string
 	Public      bool
 	InputsCount int
-	Data        *JsonStruct[map[string]any] `json:"data"`
+	Data        *string `json:"data"`
+}
+
+type Entity struct {
+	Entity    string   `json:"entity"`
+	Name      string   `json:"name"`
+	Questions []string `json:"questions"`
+}
+
+// type Text struct {
+// 	Text  string   `json:"text"`
+// 	Tones []string `json:"tones"`
+// }
+
+type Action struct {
+	Language string `json:"language"`
+	Texts    []any  `json:"texts"`
+	Type     string `json:"type"`
+}
+
+type Data struct {
+	Actions  []Action `json:"actions"`
+	Inputs   []string `json:"inputs"`
+	Entities []Entity `json:"entities"`
 }

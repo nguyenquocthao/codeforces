@@ -28,7 +28,11 @@ func readString() string {
 }
 
 func readSliceInt() []int {
-	data := strings.Split(readString(), " ")
+	s := strings.TrimSpace(readString())
+	if s == "" {
+		return []int{}
+	}
+	data := strings.Split(s, " ")
 	res := make([]int, len(data))
 	for i, v := range data {
 		res[i], _ = strconv.Atoi(v)
@@ -37,12 +41,24 @@ func readSliceInt() []int {
 }
 
 func readSliceInt64() []int64 {
-	data := strings.Split(readString(), " ")
+	s := strings.TrimSpace(readString())
+	if s == "" {
+		return []int64{}
+	}
+	data := strings.Split(s, " ")
 	res := make([]int64, len(data))
 	for i, v := range data {
 		res[i], _ = strconv.ParseInt(v, 10, 64)
 	}
 	return res
+}
+
+func readSliceString() []string {
+	s := strings.TrimSpace(readString())
+	if s == "" {
+		return []string{}
+	}
+	return strings.Split(s, " ")
 }
 
 func printSlice[T any](l []T) {
@@ -81,7 +97,7 @@ func Sum[T int | float32 | int64](args ...T) T {
 	return res
 }
 
-func abs(v int) int {
+func abs[T int | int64](v T) T {
 	if v < 0 {
 		return -v
 	}
@@ -301,17 +317,6 @@ func CountTrue(l []any) int {
 
 }
 
-func gcd(a, b int) int {
-	for b > 0 {
-		a, b = b, a%b
-	}
-	return a
-}
-
-func lcm(a, b int) int {
-	return a * (b / gcd(a, b))
-}
-
 // func Sum[T bool | int | int64 | float64](l []T) T {
 // 	var res T
 // 	for _, v := range l {
@@ -340,23 +345,6 @@ func makeRange(i, j int) []int {
 	return res
 }
 
-func factorize(v int) []int {
-	lo, hi := []int{}, []int{}
-	for i := 1; i*i <= v; i++ {
-		if i*i == v {
-			lo = append(lo, i)
-			break
-		} else if v%i == 0 {
-			lo = append(lo, i)
-			hi = append(hi, v/i)
-		}
-	}
-	for j := len(hi) - 1; j >= 0; j-- {
-		lo = append(lo, hi[j])
-	}
-	return lo
-}
-
 func Filter[T any](l []T, f func(v T) bool) []T {
 	res := []T{}
 	for _, v := range l {
@@ -375,10 +363,27 @@ func Keys[K comparable, V any](m map[K]V) []K {
 	return res
 }
 
-func divceil(a, b int) int {
+func divceil[T int | int64](a, b T) T {
 	res := a / b
 	if a%b > 0 {
 		res += 1
+	}
+	return res
+}
+
+func divneg[T int | int64](a, b T) T {
+	res := a / b
+	m := a % b
+	if m < 0 {
+		res -= 1
+	}
+	return res
+}
+
+func accumulate(a []int) []int {
+	res := make([]int, len(a)+1)
+	for i, v := range a {
+		res[i+1] = res[i] + v
 	}
 	return res
 }
@@ -400,7 +405,7 @@ func cal2(a, b int) int {
 	return (n * (2*b - a*(n+1))) / 2
 }
 
-func next_greater_index(arr []int) []int {
+func nextGreaterIndex(arr []int) []int {
 	n := len(arr)
 	res := make([]int, n)
 	st := []int{}
@@ -524,19 +529,6 @@ func LogTime(initt time.Time) {
 	fmt.Println(line, time.Now().Sub(initt))
 }
 
-var factors = make([][]int, 1000001)
-
-func init() {
-	for i := 2; i < len(factors); i++ {
-		if len(factors[i]) > 0 {
-			continue
-		}
-		for j := i; j < len(factors); j += i {
-			factors[j] = append(factors[j], i)
-		}
-	}
-}
-
 func kmp(s string) []int {
 	table, i := []int{0}, 0
 	for _, ch := range s[1:] {
@@ -564,4 +556,48 @@ func zfunction(s string) []int {
 		}
 	}
 	return z
+}
+
+func ninverse(a []int) int {
+	merge := func(a, b []int) ([]int, int) {
+		if len(a) == 0 {
+			return b, 0
+		}
+		if len(b) == 0 {
+			return a, 0
+		}
+		l, count, i, j := make([]int, len(a)+len(b)), 0, 0, 0
+		for i < len(a) || j < len(b) {
+			if j >= len(b) || (i < len(a) && a[i] <= b[j]) {
+				count += j
+				l[i+j] = a[i]
+				i += 1
+			} else {
+				l[i+j] = b[j]
+				j += 1
+			}
+		}
+		return l, count
+	}
+	var cal func(l []int) ([]int, int)
+	cal = func(l []int) ([]int, int) {
+		if len(l) <= 1 {
+			return l, 0
+		}
+		mid := len(l) / 2
+		x, c0 := cal(l[:mid])
+		y, c1 := cal(l[mid:])
+		res, c2 := merge(x, y)
+		return res, c0 + c1 + c2
+	}
+	_, res := cal(a)
+	return res
+}
+
+func Count[T comparable](l []T) map[T]int {
+	m := map[T]int{}
+	for _, v := range l {
+		m[v] += 1
+	}
+	return m
 }

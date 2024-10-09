@@ -23,81 +23,44 @@ fun myPrint(vararg args: Any?) {
     println(args.joinToString(" "))
 }
 
+fun divceil(a: Int, b: Int): Int {
+    if (a % b == 0) {
+        return a / b
+    } else {
+        return a / b + 1
+    }
+}
+
 fun main() {
-    initFAC()
-    val (n,k) = readSlice<Long>()
-    myPrint(*run(n,k).toTypedArray())
-    // repeat(readInt()) {
-    //     readInt()
-    //     println(run(readSlice<Long>()))
-
-    // }
-}
-
-const val MOD = 1000000007L
-// const val maxn = 1000000
-const val maxn = 400000
-
-var FAC = LongArray(maxn+1){0}
-var IFAC = LongArray(maxn+1){0}
-
-fun initFAC() {
-    FAC[0] = 1
-    FAC[1] = 1
-    IFAC[0]= 1
-    IFAC[1]=1
-    for (i in 2 until maxn+1){
-        FAC[i] = (i * FAC[i-1])%MOD
-        IFAC[i] = mod_inverse(FAC[i])
+    repeat(readInt()) {
+        var (n,p) = readSlice<Int>()
+        println(run(p, readSlice<Int>().toIntArray()))
     }
 }
 
-fun pow(x:Long, n:Long):Long {
-	var x = x % MOD
-	var res = 1L
-    var n = n
-	while (n > 0 ){
-		if (n%2 == 1L ){
-			res = (res * x) % MOD
-		}
-		x = (x * x) % MOD
-		n = n / 2
-	}
-	return res
-}
-
-fun mod_inverse(x:Long):Long {
-	return pow(x, MOD-2)
-}
-
-fun comb(n:Long, k:Long):Long {
-	if (n < 0 || k > n ){
-		return 0
-	}
-	val inv = mod(IFAC[k.toInt()] * IFAC[(n-k).toInt()])
-	return (FAC[n.toInt()] * inv) % MOD
-}
-
-fun mod(v:Long ) :Long {
-	var res = v % MOD
-	if (res < 0 ){
-		res += MOD
-	}
-	return res
-}
-
-fun run(n:Long, k:Long):LongArray{
-    var b0 = comb(2*n-2, k)
-    // myPrint(89, n, k, b0)
-    var res = LongArray(n.toInt()+1){0}
-    for ( i in 1 until n.toInt()){
-        res[i] = mod(2*comb(n-i.toLong()-1, k-1) + (n-i-1)*comb(n-i.toLong()-2, k-2))
-        if (res[i]==0L){
-            break
-        } else {
-            b0 = mod(b0-res[i])
+fun run(p:Int, a:IntArray): Int{
+    val n = a.size
+    a.sort()
+    fun dp(i: Int, p: Int, ngreen: Int, nblue: Int): Int{
+        if (i==n){
+            return i
         }
+        var p = p
+        for (j in i until n){
+            if (p>a[j]){
+                p += a[j]/2
+            } else {
+                var res = j
+                if (ngreen>0){
+                    res = maxOf(res, dp(j, p*2, ngreen-1, nblue))
+                }
+                if (nblue>0){
+                    res = maxOf(res, dp(j, p*3, ngreen, nblue-1))
+                }
+                return res
+            }
+        }
+        return n
     }
-    res[0]=b0
-    return res
+    return dp(0,p,2,1)
 }

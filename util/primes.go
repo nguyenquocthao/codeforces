@@ -45,13 +45,13 @@ func factorize(v int) []int {
 	return lo
 }
 
-func gcd(a, b int) int {
+func gcd[T int | int64](a, b T) T {
 	for b > 0 {
 		a, b = b, a%b
 	}
 	return a
 }
 
-func lcm(a, b int) int {
+func lcm[T int | int64](a, b T) T {
 	return a * (b / gcd(a, b))
 }

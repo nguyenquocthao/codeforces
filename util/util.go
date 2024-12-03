@@ -233,7 +233,7 @@ func comb(n, k int64) int64 {
 	return (FAC[n] * inv) % MOD
 }
 
-func mod(v int64) int64 {
+func mod[T int | int64](v T) T {
 	res := v % MOD
 	if res < 0 {
 		res += MOD
@@ -600,4 +600,185 @@ func Count[T comparable](l []T) map[T]int {
 		m[v] += 1
 	}
 	return m
+}
+
+func maximalmatching(m [][]int, n2 int) int {
+	n := len(m)
+	mt := Repeat(-1, n2)
+	used := make([]bool, n)
+	marked := make([]bool, n)
+	for i, l := range m {
+		for _, j := range l {
+			if mt[j] == -1 {
+				mt[j] = i
+				used[i] = true
+				break
+			}
+		}
+	}
+	var tryKuhn func(i int) bool
+	tryKuhn = func(i int) bool {
+		if marked[i] {
+			return false
+		}
+		marked[i] = true
+		for _, j := range m[i] {
+			if mt[j] == -1 || tryKuhn(mt[j]) {
+				mt[j] = i
+				return true
+			}
+		}
+		return false
+	}
+	for i := 0; i < n; i++ {
+		if !used[i] {
+			marked = make([]bool, n)
+			tryKuhn(i)
+		}
+	}
+	res := 0
+	for _, v := range mt {
+		if v >= 0 {
+			res += 1
+		}
+	}
+	return res
+}
+
+func ListPop[T any](l []T, i int) []T {
+	if i >= len(l) {
+		panic(fmt.Sprintf("index out of range, len %v, i %v", len(l), i))
+	}
+	for j := i; j < len(l)-1; j++ {
+		l[j] = l[j+1]
+	}
+	return l[:len(l)-1]
+
+}
+
+func Contains[T comparable](l []T, x T) bool {
+	for _, v := range l {
+		if v == x {
+			return true
+		}
+	}
+	return false
+}
+
+func nextPermutation(nums []int) bool {
+	// Step 1: Find the pivot (rightmost index `i` where nums[i] < nums[i+1])
+	i := len(nums) - 2
+	for i >= 0 && nums[i] >= nums[i+1] {
+		i--
+	}
+
+	// If no pivot is found, the array is in descending order
+	if i < 0 {
+		return false
+	}
+
+	// Step 2: Find the rightmost element `j` where nums[j] > nums[i]
+	j := len(nums) - 1
+	for nums[j] <= nums[i] {
+		j--
+	}
+
+	// Step 3: Swap nums[i] and nums[j]
+	nums[i], nums[j] = nums[j], nums[i]
+
+	// Step 4: Reverse the suffix starting at nums[i+1]
+	reverse2(nums, i+1)
+
+	return true
+}
+
+func reverse2(nums []int, start int) {
+	end := len(nums) - 1
+	for start < end {
+		nums[start], nums[end] = nums[end], nums[start]
+		start++
+		end--
+	}
+}
+
+func ListRemove[T comparable](l []T, v T) []T {
+	for i, x := range l {
+		if x == v {
+			l[i], l[len(l)-1] = l[len(l)-1], l[i]
+			return l[:len(l)-1]
+		}
+	}
+	return l
+
+}
+
+func TarjanInt(graph [][]int) []int {
+	n := len(graph)
+	lowLinks := Repeat(-1, n)
+	onstack := make([]bool, n)
+	stack := NewStack[int]()
+
+	globalid := 1
+
+	var strongconnect func(int)
+	strongconnect = func(v int) {
+		if lowLinks[v] >= 0 {
+			return
+		}
+		index := globalid
+		globalid += 1
+
+		// index := len(lowLinks)
+		lowLinks[v] = index
+		stack.Push(v)
+		onstack[v] = true
+		for _, w := range graph[v] {
+			strongconnect(w)
+			if onstack[w] {
+				lowLinks[v] = Min(lowLinks[v], lowLinks[w])
+			}
+		}
+		if lowLinks[v] == index {
+			for {
+				w := stack.Pop()
+				onstack[w] = false
+				if w == v {
+					break
+				}
+			}
+		}
+	}
+	for v := 0; v < n; v++ {
+		strongconnect(v)
+	}
+
+	return lowLinks
+}
+
+func GetDAGFromSCSInt(graph [][]int, sccs []int) map[int][]int {
+	n := len(graph)
+	marked, connected := make([]bool, n), map[[2]int]bool{}
+	var dp func(int)
+	dp = func(i int) {
+		if marked[i] {
+			return
+		}
+		marked[i] = true
+		for _, j := range graph[i] {
+			key := [2]int{sccs[i], sccs[j]}
+			if key[0] != key[1] {
+				connected[key] = true
+			}
+
+			dp(j)
+		}
+	}
+	for i := 0; i < n; i++ {
+		dp(i)
+	}
+	res := map[int][]int{}
+	for pair := range connected {
+		res[pair[0]] = append(res[pair[0]], pair[1])
+	}
+	return res
 }

@@ -339,8 +339,91 @@ func NewStack[T any]() *Stack[T] {
 	return &Stack[T]{data: []T{}, i: 0}
 }
 
-func run(cities [][]int) {
-	n := len(cities)
+func TarjanInt(graph [][]int) []int {
+	n := len(graph)
+	lowLinks := Repeat(-1, n)
+	onstack := make([]bool, n)
+	stack := NewStack[int]()
+
+	globalid := 1
+
+	var strongconnect func(int)
+	strongconnect = func(v int) {
+		if lowLinks[v] >= 0 {
+			return
+		}
+		index := globalid
+		globalid += 1
+
+		// index := len(lowLinks)
+		lowLinks[v] = index
+		stack.Push(v)
+		onstack[v] = true
+		for _, w := range graph[v] {
+			strongconnect(w)
+			if onstack[w] {
+				lowLinks[v] = Min(lowLinks[v], lowLinks[w])
+			}
+		}
+		if lowLinks[v] == index {
+			for {
+				w := stack.Pop()
+				onstack[w] = false
+				if w == v {
+					break
+				}
+			}
+		}
+	}
+	for v := 0; v < n; v++ {
+		strongconnect(v)
+	}
+
+	return lowLinks
+}
+
+func GetDAGFromSCSInt(graph [][]int, sccs []int) map[int][]int {
+	n := len(graph)
+	marked, connected := make([]bool, n), map[[2]int]bool{}
+	var dp func(int)
+	dp = func(i int) {
+		if marked[i] {
+			return
+		}
+		marked[i] = true
+		for _, j := range graph[i] {
+			key := [2]int{sccs[i], sccs[j]}
+			if key[0] != key[1] {
+				connected[key] = true
+			}
+
+			dp(j)
+		}
+	}
+	for i := 0; i < n; i++ {
+		dp(i)
+	}
+	res := map[int][]int{}
+	for pair := range connected {
+		res[pair[0]] = append(res[pair[0]], pair[1])
+	}
+	return res
+}
+
+func run(a []int, roads [][]int) int {
+	n := len(a)
+	graph := make([][]int, n)
+	for _, r := range roads {
+		i, j := r[0]-1, r[1]-1
+		graph[i] = append(graph[i], j)
+	}
+	tar := TarjanInt(graph)
+	dag := GetDAGFromSCSInt(graph, tar)
+	count := map[int]int{}
+	for i, v := range a {
+		count[tar[i]] += v
+	}
+	marked := map[int]bool{}
 
 }
 
@@ -348,11 +431,17 @@ func main() {
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		cities := make([][]int, readInt())
-		for i := range cities {
-			cities[i] = readSliceInt()
+		l := readSliceInt()
+		a := readSliceInt()
+		roads := make([][]int, l[1])
+		for i := range roads {
+			roads[i] = readSliceInt()
 		}
-		run(cities)
+		fmt.Println(run(a, roads))
 	}
-
+	// graph := [][]int{{1}, {2}, {0}, {1, 2, 4}, {3, 6}, {5, 4, 7}, {2, 7}, {6}}
+	// tar := TarjanInt(graph)
+	// fmt.Println(tar)
+	// fmt.Println(GetDAGFromSCSInt(graph, tar))
+	// fmt.Println(TarjanInt(graph))
 }

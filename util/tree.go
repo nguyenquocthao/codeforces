@@ -115,7 +115,16 @@ func (n *Node[T]) PrettyPrint() {
 	for _, r := range d {
 		fmt.Println(r)
 	}
+}
 
+func (n *Node[T]) Traverse(f func(v T)) {
+	if n.Left != nil {
+		n.Left.Traverse(f)
+	}
+	f(n.V)
+	if n.Right != nil {
+		n.Right.Traverse(f)
+	}
 }
 
 type SplayTree[T any] struct {
@@ -264,6 +273,7 @@ func (tree *SplayTree[T]) Delete(v T) (isdeleted bool) {
 	return true
 }
 
+// Find index of value greater than or equal
 func (tree *SplayTree[T]) Bisect(v T) int {
 	// Find index of value greater than or equal
 	node, offset, cur := tree.Root, 0, 0
@@ -281,4 +291,12 @@ func (tree *SplayTree[T]) Bisect(v T) int {
 		}
 	}
 	return cur
+}
+
+func (tree *SplayTree[T]) ToList() []T {
+	res := []T{}
+	tree.Root.Traverse(func(v T) {
+		res = append(res, v)
+	})
+	return res
 }

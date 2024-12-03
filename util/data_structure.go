@@ -73,6 +73,10 @@ func (s *Stack[T]) Pop() T {
 	return s.data[s.i]
 }
 
+func (s *Stack[T]) ToList() []T {
+	return s.data[:s.i]
+}
+
 func NewStack[T any]() *Stack[T] {
 	return &Stack[T]{data: []T{}, i: 0}
 }

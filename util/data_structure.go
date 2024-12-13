@@ -276,12 +276,16 @@ func (dq *Deque[T]) Pop() T {
 	return res
 }
 
-func (dq Deque[T]) String() string {
+func (dq Deque[T]) ToList() []T {
 	res := make([]T, dq.Len())
-	for i := 0; i < dq.Len(); i++ {
+	for i := range res {
 		res[i] = dq.At(i)
 	}
-	return fmt.Sprint(res)
+	return res
+}
+
+func (dq Deque[T]) String() string {
+	return fmt.Sprint(dq.ToList())
 }
 
 type QueryRange interface {
@@ -334,9 +338,9 @@ func (t *FenwickTree) Update(i, v int) {
 	if t.A[i] == v {
 		return
 	}
-	i += 1
 	added := v - t.A[i]
 	t.A[i] += added
+	i += 1
 	for i < len(t.Tree) {
 		t.Tree[i] += added
 		i += i & -i

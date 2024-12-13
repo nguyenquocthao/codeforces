@@ -19,6 +19,7 @@ func main() {
 		`).Find(&records)
 	PrintFileAndLineInfo(records)
 	count := 0
+	return
 
 	for _, v := range records {
 		v.Skillid = "8ade0166715f495fad52aec4032b3a7f"

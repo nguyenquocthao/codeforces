@@ -4,17 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"runtime"
 	"time"
 
+	_ "github.com/joho/godotenv/autoload"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var (
 	db           *gorm.DB
-	PASS         = url.QueryEscape("FBr15tWrIBCxpB<Pm2X<7DPGe*:X")
-	DATABASE_URL = "postgres://postgres:" + PASS + "@common-postgres-db.cluster-cjqwi4ysiv1m.ap-southeast-1.rds.amazonaws.com:5432/skills"
+	PASS         = url.QueryEscape(os.Getenv("PASS"))
+	DATABASE_URL = fmt.Sprintf(os.Getenv("DATABASE_URL"), PASS)
 )
 
 // const (

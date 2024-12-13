@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"math/bits"
 	"os"
 	"slices"
 	"strconv"
@@ -187,22 +186,162 @@ func Keys[K comparable, V any](m map[K]V) []K {
 	return res
 }
 
+func IfElse[T any](condition bool, a, b T) T {
+	if condition {
+		return a
+	} else {
+		return b
+	}
+}
+
+func gcd[T int | int64](a, b T) T {
+	for b > 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
+func lcm[T int | int64](a, b T) T {
+	return a * (b / gcd(a, b))
+}
+
+func tol(s string) []int {
+	res := make([]int, len(s))
+	for i, ch := range s {
+		if ch == '1' {
+			res[i] = 1
+		} else {
+			res[i] = 0
+		}
+	}
+	return res
+}
+
+type Deque[T any] struct {
+	Data       []T
+	Start, End int
+}
+
+func (dq *Deque[T]) Len() int {
+	return dq.End - dq.Start
+}
+
+func NewDeque[T any](l []T, capacity int) *Deque[T] {
+	res := &Deque[T]{}
+	if capacity < 2 {
+		capacity = 2
+	}
+	res.Start = 0
+	res.End = len(l)
+	if len(l) >= capacity {
+		res.Data = l
+	} else {
+		res.Data = make([]T, capacity)
+		copy(res.Data, l)
+	}
+	// fmt.Println(res)
+	return res
+}
+
+func (dq *Deque[T]) upgradeFull() {
+	if dq.Len() < len(dq.Data) {
+		return
+	}
+	// fmt.Println("upgrade", dq)
+	data := append(dq.Data[dq.Start:], dq.Data[:dq.Start]...)
+	dq.Start = 0
+	dq.End = len(data)
+	dq.Data = make([]T, 2*len(data)+1)
+	copy(dq.Data, data)
+}
+
+func (dq *Deque[T]) First() T {
+	// fmt.Println(dq)
+	return dq.Data[dq.Start]
+}
+func (dq *Deque[T]) Last() T {
+	// fmt.Println(dq)
+	j := dq.End - 1
+	if j >= len(dq.Data) {
+		j -= len(dq.Data)
+	}
+	return dq.Data[j]
+}
+
+func (dq *Deque[T]) At(i int) T {
+	i += dq.Start
+	if i >= len(dq.Data) {
+		i -= len(dq.Data)
+	}
+	return dq.Data[i]
+}
+
+func (dq *Deque[T]) AppendLeft(v T) {
+	dq.upgradeFull()
+	if dq.Start == 0 {
+		dq.Start, dq.End = dq.Start+len(dq.Data), dq.End+len(dq.Data)
+	}
+	dq.Start -= 1
+	dq.Data[dq.Start] = v
+}
+
+func (dq *Deque[T]) Append(v T) {
+	dq.upgradeFull()
+	j := dq.End
+	if j >= len(dq.Data) {
+		j -= len(dq.Data)
+	}
+	dq.Data[j] = v
+	dq.End += 1
+}
+
+func (dq *Deque[T]) PopLeft() T {
+	res := dq.First()
+	dq.Start += 1
+	if dq.Start == len(dq.Data) {
+		dq.Start, dq.End = dq.Start-len(dq.Data), dq.End-len(dq.Data)
+	}
+	return res
+}
+
+func (dq *Deque[T]) Pop() T {
+	res := dq.Last()
+	dq.End -= 1
+	return res
+}
+
+func (dq Deque[T]) String() string {
+	res := make([]T, dq.Len())
+	for i := 0; i < dq.Len(); i++ {
+		res[i] = dq.At(i)
+	}
+	return fmt.Sprint(res)
+}
+
+func (dq *Deque[T]) ToList() []T {
+	res := make([]T, dq.Len())
+	for i := range res {
+		res[i] = dq.At(i)
+	}
+	return res
+}
+
 const MOD = 998244353
 
 // const MOD = 1000000007
-const maxn = 1000000
+const maxn = 3000000
 
-// var FAC = make([]int64, maxn+1)
-// var IFAC = make([]int64, maxn+1)
+var FAC = make([]int64, maxn+1)
+var IFAC = make([]int64, maxn+1)
 
-// func init() {
-// 	FAC[0], FAC[1] = 1, 1
-// 	IFAC[0], IFAC[1] = 1, 1
-// 	for i := int64(2); i < maxn+1; i++ {
-// 		FAC[i] = (i * FAC[i-1]) % MOD
-// 		IFAC[i] = mod_inverse(FAC[i])
-// 	}
-// }
+func init() {
+	FAC[0], FAC[1] = 1, 1
+	IFAC[0], IFAC[1] = 1, 1
+	for i := int64(2); i < maxn+1; i++ {
+		FAC[i] = (i * FAC[i-1]) % MOD
+		IFAC[i] = mod_inverse(FAC[i])
+	}
+}
 
 func pow(x, n int64) int64 {
 	x = x % MOD
@@ -221,13 +360,13 @@ func mod_inverse(x int64) int64 {
 	return pow(x, MOD-2)
 }
 
-// func comb(n, k int64) int64 {
-// 	if n < 0 || k > n {
-// 		return 0
-// 	}
-// 	inv := (IFAC[k] * IFAC[n-k]) % MOD
-// 	return (FAC[n] * inv) % MOD
-// }
+func comb(n, k int64) int64 {
+	if n < 0 || k > n {
+		return 0
+	}
+	inv := (IFAC[k] * IFAC[n-k]) % MOD
+	return (FAC[n] * inv) % MOD
+}
 
 func mod[T int | int64](v T) T {
 	res := v % MOD
@@ -237,307 +376,121 @@ func mod[T int | int64](v T) T {
 	return res
 }
 
-func reverse[T any](l []T) {
-	i, j := 0, len(l)-1
-	for i < j {
-		l[i], l[j] = l[j], l[i]
-		i, j = i+1, j-1
-	}
-}
+var mfactors = make([]int, 3000001)
 
-type RMQ struct {
-	data [][]int
-	l    []int
-}
-
-func (r *RMQ) minAt(i, j int) int {
-	if r.l[i] <= r.l[j] {
-		return i
-	}
-	return j
-}
-
-func NewRMQ(l []int) *RMQ {
-	r := &RMQ{nil, l}
-	n := len(l)
-	data := [][]int{make([]int, n)}
-	for i := 0; i < n; i++ {
-		data[0][i] = i
-	}
-	for p := 1; (1 << p) <= n; p++ {
-		prev := data[p-1]
-
-		cur := make([]int, n-(1<<p)+1)
-		for i := range cur {
-			cur[i] = r.minAt(prev[i], prev[i+(1<<(p-1))])
+func init() {
+	for i := 2; i < len(mfactors); i++ {
+		if mfactors[i] > 0 {
+			continue
 		}
-		data = append(data, cur)
-	}
-	r.data = data
-	return r
-}
+		mfactors[i] = i
 
-func (r *RMQ) Query(i, j int) int {
-	if i > j {
-		i, j = j, i
-	}
-	if i == j {
-		return i
-	}
-	nb := bits.Len(uint((j - i + 1))) - 1
-	return r.minAt(r.data[nb][i], r.data[nb][j-(1<<nb)+1])
-}
-
-type LCA struct {
-	query func(a, b int) int
-}
-
-func NewLCA(root int, mchild [][]int) *LCA {
-	nnode := len(mchild)
-	order := make([]int, 0, 2*nnode)
-	depth := make([]int, 0, 2*nnode)
-
-	var dfs func(node, d int)
-	dfs = func(node, d int) {
-		order = append(order, node)
-		depth = append(depth, d)
-		for _, child := range mchild[node] {
-			dfs(child, d+1)
-			order = append(order, node)
-			depth = append(depth, d)
-		}
-	}
-	dfs(root, 0)
-
-	rvIndex := make([]int, nnode)
-	// for i := range rvIndex {
-	// 	rvIndex[i] = -1
-	// }
-	for i, node := range order {
-		rvIndex[node] = i
-	}
-
-	if len(order) < 32 {
-		rmq := NewRMQ(depth)
-		return &LCA{
-			query: func(a, b int) int {
-				i, j := rvIndex[a], rvIndex[b]
-				return order[rmq.Query(i, j)]
-			},
-		}
-	}
-
-	bsize := bits.Len(uint(len(depth))) / 2
-	for len(depth)%bsize > 0 {
-		depth = append(depth, depth[len(depth)-1]+1)
-	}
-
-	blocks := make([]*RMQ, 0, len(depth)/bsize)
-	mblock := map[int]*RMQ{}
-	for i := 0; i < len(depth); i += bsize {
-		key := 0
-		for j := i; j < i+bsize-1; j++ {
-			key <<= 1
-			if depth[j] < depth[j+1] {
-				key |= 1
+		for j := i * i; j < len(mfactors); j += i {
+			if mfactors[j] == 0 {
+				mfactors[j] = i
 			}
 		}
-		if _, ok := mblock[key]; !ok {
-			mblock[key] = NewRMQ(depth[i : i+bsize])
-		}
-		blocks = append(blocks, mblock[key])
-	}
-
-	bQuery := func(bi, i, j int) int {
-		return blocks[bi].Query(i, j) + bi*bsize
-	}
-
-	getMin := func(indexes ...int) int {
-		minIdx := indexes[0]
-		for _, idx := range indexes {
-			if depth[idx] < depth[minIdx] {
-				minIdx = idx
-			}
-		}
-		return order[minIdx]
-	}
-
-	blockDepth := []int{}
-	for bi := 0; bi < len(blocks); bi++ {
-		blockDepth = append(blockDepth, depth[bQuery(bi, 0, bsize-1)])
-	}
-	rmqAll := NewRMQ(blockDepth)
-
-	return &LCA{
-		query: func(a, b int) int {
-			i, j := rvIndex[a], rvIndex[b]
-			if i > j {
-				i, j = j, i
-			}
-			bi, bj := i/bsize, j/bsize
-			if bi == bj {
-				return getMin(bQuery(bi, i-bi*bsize, j-bi*bsize))
-			}
-			indexes := []int{
-				bQuery(bi, i-bi*bsize, bsize-1),
-				bQuery(bj, 0, j-bj*bsize),
-			}
-			if bj-bi >= 2 {
-				bk := rmqAll.Query(bi+1, bj-1)
-				indexes = append(indexes, bQuery(bk, 0, bsize-1))
-			}
-			return getMin(indexes...)
-		},
 	}
 }
 
-type UnionFind []int
+var cachedFactorize = map[int][]int{}
 
-func (u UnionFind) Find(x int) int {
-	if u[x] != x {
-		u[x] = u.Find(u[x])
+func factorize(v int) []int {
+	if v == 1 {
+		return []int{1}
 	}
-	return u[x]
-}
+	if x, ok := cachedFactorize[v]; ok {
+		return x
+	}
+	key := v
 
-func (u UnionFind) Union(x, y int) {
-	u[u.Find(y)] = u.Find(x)
-}
+	minf, c := mfactors[v], 0
+	for mfactors[v] == minf {
+		c += 1
+		v = v / minf
+	}
 
-func (u UnionFind) NGroup() int {
-	res := 0
-	for i, v := range u {
-		if i == v {
-			res++
+	prev := factorize(v)
+	res := make([]int, 0, len(prev)*(c+1))
+	for _, v := range prev {
+		res = append(res, v)
+		for i := 0; i < c; i++ {
+			v *= minf
+			res = append(res, v)
 		}
+	}
+	slices.Sort(res)
+	cachedFactorize[key] = res
+	return res
+}
+
+func countGCD(n int) [][2]int {
+	factors := factorize(n)
+	m := map[int]int{}
+	for _, f := range factors {
+		m[f] = n / f
+	}
+	for i := len(factors) - 1; i >= 0; i-- {
+		v := factors[i]
+		for _, mul := range factorize(n / v) {
+			if mul > 1 {
+				m[v] -= m[v*mul]
+			}
+		}
+	}
+	res := make([][2]int, len(factors))
+	for i, f := range factors {
+		res[i] = [2]int{f, m[f]}
 	}
 	return res
 }
 
-func ListRemove[T comparable](l []T, v T) []T {
-	for i, x := range l {
-		if x == v {
-			l[i], l[len(l)-1] = l[len(l)-1], l[i]
-			return l[:len(l)-1]
-		}
+func run(a, b, c int, d []int) int64 {
+	gcdv := 0
+	for _, v := range d {
+		gcdv = gcd(gcdv, v)
 	}
-	return l
-
-}
-
-func run(a []int, edges [][]int) {
-	n := len(a) / 2
-	m := make([][]int, 2*n)
-	for _, e := range edges {
-		i, j := e[0]-1, e[1]-1
-		m[i] = append(m[i], j)
-		m[j] = append(m[j], i)
-	}
-	uf := UnionFind(makeRange(0, 2*n))
-	colors := make([]map[int]bool, 2*n)
-	for i, col := range a {
-		colors[i] = map[int]bool{col: true}
-	}
-	union := func(i, j int) {
-		i, j = uf.Find(i), uf.Find(j)
-		if i == j {
-			return
+	cal := func(lrepeat int) int64 {
+		cur, res := int64(0), int64(1)
+		for _, v := range d {
+			v2 := int64(v / lrepeat)
+			res = res * comb(cur+v2, v2) % MOD
+			cur += v2
 		}
-		if len(colors[i]) < len(colors[j]) {
-			i, j = j, i
-		}
-		for c := range colors[j] {
-			colors[i][c] = true
-		}
-		colors[j] = nil
-		uf[j] = i
+		return res
 	}
-	root := 0
-	for i, nb := range m {
-		for _, j := range nb {
-			if j < i {
-				union(i, j)
+	m := map[int]int{1: 1}
+	for _, v := range []int{a, b, c} {
+		cgcd := countGCD(v)
+		m2 := map[int]int{}
+		for j := len(cgcd) - 1; j >= 0; j-- {
+			x := v / cgcd[j][0]
+			if gcdv%x > 0 {
+				continue
+			}
+			for val, mul := range m {
+				m2[lcm(val, x)] += cgcd[j][1] * mul
 			}
 		}
-		if len(colors[uf.Find(i)]) == n {
-			root = i
-			break
-		}
+		m = m2
 	}
-	parent := make([]int, 2*n)
-	parent[root] = root
-	var maketree func(i int)
-	maketree = func(i int) {
-		for _, j := range m[i] {
-			m[j] = ListRemove(m[j], i)
-			parent[j] = i
-			maketree(j)
-		}
-	}
-	maketree(root)
-	// fmt.Println(root, parent, m)
-	mustkeep, removed, lca := make([]bool, 2*n), make([]bool, 2*n), NewLCA(root, m)
-	colornodes := make([][]int, n+1)
-	for i, c := range a {
-		colornodes[c] = append(colornodes[c], i)
-	}
-	markkeep := func(i int) {
-		if removed[i] {
-			return
-		}
-		for !mustkeep[i] {
-			mustkeep[i] = true
-			i = parent[i]
-		}
-	}
-	for c := 1; c <= n; c++ {
-		markkeep(lca.query(colornodes[c][0], colornodes[c][1]))
-	}
-	// fmt.Println(colornodes, mustkeep)
-	var removenode func(i int)
-	removenode = func(i int) {
-		if removed[i] {
-			return
-		}
-		removed[i] = true
-		for _, j := range colornodes[a[i]] {
-			if j != i {
-				markkeep(j)
-				break
-			}
-		}
-		for _, j := range m[i] {
-			removenode(j)
-		}
-	}
-	res := []int{}
-	for i := 2*n - 1; i >= 0; i-- {
-		if removed[i] {
-			continue
-		}
-		if mustkeep[i] {
-			res = append(res, i+1)
-		} else {
-			removenode(i)
-		}
-	}
-	slices.Reverse(res)
-	fmt.Println(len(res))
-	printSlice(res)
 
+	res := int64(0)
+	for val, mul := range m {
+		res = mod(res + mod(int64(mul)*cal(val)))
+	}
+
+	return res * mod_inverse(int64(a)*int64(b)*int64(c)) % MOD
 }
 
 func main() {
-	// ntest := readInt()
-	ntest := 1
+
+	ntest := readInt()
+	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		readInt()
-		a := readSliceInt()
-		edges := make([][]int, len(a)-1)
-		for i := range edges {
-			edges[i] = readSliceInt()
-		}
-		run(a, edges)
+		l := readSliceInt()
+		fmt.Println(run(l[0], l[1], l[2], readSliceInt()))
+
 	}
 
 }

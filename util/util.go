@@ -363,6 +363,14 @@ func Keys[K comparable, V any](m map[K]V) []K {
 	return res
 }
 
+func Map[T, T1 any](l []T, f func(v T) T1) []T1 {
+	res := make([]T1, len(l))
+	for i, v := range l {
+		res[i] = f(v)
+	}
+	return res
+}
+
 func divceil[T int | int64](a, b T) T {
 	res := a / b
 	if a%b > 0 {
@@ -781,4 +789,12 @@ func GetDAGFromSCSInt(graph [][]int, sccs []int) map[int][]int {
 		res[pair[0]] = append(res[pair[0]], pair[1])
 	}
 	return res
+}
+
+func IfElse[T any](condition bool, a, b T) T {
+	if condition {
+		return a
+	} else {
+		return b
+	}
 }

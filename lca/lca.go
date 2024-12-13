@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"math"
+	"math/bits"
 )
 
 type RMQ struct {
@@ -10,14 +10,15 @@ type RMQ struct {
 	l    []int
 }
 
-func minAt(l []int, i, j int) int {
-	if l[i] <= l[j] {
+func (r *RMQ) minAt(i, j int) int {
+	if r.l[i] <= r.l[j] {
 		return i
 	}
 	return j
 }
 
 func NewRMQ(l []int) *RMQ {
+	r := &RMQ{nil, l}
 	n := len(l)
 	data := [][]int{make([]int, n)}
 	for i := 0; i < n; i++ {
@@ -28,11 +29,12 @@ func NewRMQ(l []int) *RMQ {
 
 		cur := make([]int, n-(1<<p)+1)
 		for i := range cur {
-			cur[i] = minAt(l, prev[i], prev[i+(1<<(p-1))])
+			cur[i] = r.minAt(prev[i], prev[i+(1<<(p-1))])
 		}
 		data = append(data, cur)
 	}
-	return &RMQ{data: data, l: l}
+	r.data = data
+	return r
 }
 
 func (r *RMQ) Query(i, j int) int {
@@ -42,8 +44,8 @@ func (r *RMQ) Query(i, j int) int {
 	if i == j {
 		return i
 	}
-	nb := int(math.Log2(float64(j - i + 1)))
-	return minAt(r.l, r.data[nb][i], r.data[nb][j-(1<<nb)+1])
+	nb := bits.Len(uint((j - i + 1))) - 1
+	return r.minAt(r.data[nb][i], r.data[nb][j-(1<<nb)+1])
 }
 
 type LCA struct {
@@ -51,8 +53,9 @@ type LCA struct {
 }
 
 func NewLCA(root int, mchild [][]int) *LCA {
-	order := []int{}
-	depth := []int{}
+	nnode := len(mchild)
+	order := make([]int, 0, 2*nnode)
+	depth := make([]int, 0, 2*nnode)
 
 	var dfs func(node, d int)
 	dfs = func(node, d int) {
@@ -66,15 +69,15 @@ func NewLCA(root int, mchild [][]int) *LCA {
 	}
 	dfs(root, 0)
 
-	rvIndex := make([]int, len(mchild))
-	for i := range rvIndex {
-		rvIndex[i] = -1
-	}
+	rvIndex := make([]int, nnode)
+	// for i := range rvIndex {
+	// 	rvIndex[i] = -1
+	// }
 	for i, node := range order {
 		rvIndex[node] = i
 	}
 
-	if len(order) < 16 {
+	if len(order) < 32 {
 		rmq := NewRMQ(depth)
 		return &LCA{
 			query: func(a, b int) int {
@@ -84,12 +87,12 @@ func NewLCA(root int, mchild [][]int) *LCA {
 		}
 	}
 
-	bsize := int(math.Sqrt(float64(len(depth))))
+	bsize := bits.Len(uint(len(depth))) / 2
 	for len(depth)%bsize > 0 {
 		depth = append(depth, depth[len(depth)-1]+1)
 	}
 
-	blocks := []*RMQ{}
+	blocks := make([]*RMQ, 0, len(depth)/bsize)
 	mblock := map[int]*RMQ{}
 	for i := 0; i < len(depth); i += bsize {
 		key := 0
@@ -146,6 +149,49 @@ func NewLCA(root int, mchild [][]int) *LCA {
 			return getMin(indexes...)
 		},
 	}
+}
+
+func gcd[T int | int64](a, b T) T {
+	for b > 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
+type SparseTable struct {
+	data [][]int
+	l    []int
+}
+
+func NewSparseTable(l []int) *SparseTable {
+	r := &SparseTable{nil, l}
+	n := len(l)
+	data := [][]int{make([]int, n)}
+	for i := 0; i < n; i++ {
+		data[0][i] = l[i]
+	}
+	for p := 1; (1 << p) <= n; p++ {
+		prev := data[p-1]
+
+		cur := make([]int, n-(1<<p)+1)
+		for i := range cur {
+			cur[i] = gcd(prev[i], prev[i+(1<<(p-1))])
+		}
+		data = append(data, cur)
+	}
+	r.data = data
+	return r
+}
+
+func (r *SparseTable) Query(i, j int) int {
+	if i > j {
+		i, j = j, i
+	}
+	// if i == j {
+	// 	return r.l[i]
+	// }
+	nb := bits.Len(uint((j - i + 1))) - 1
+	return gcd(r.data[nb][i], r.data[nb][j-(1<<nb)+1])
 }
 
 func main() {

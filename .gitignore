@@ -1,3 +1,5 @@
 db/app.log
 .env
 *.jar
+*.wav
+*.txt

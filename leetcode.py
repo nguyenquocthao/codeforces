@@ -161,22 +161,10 @@ def build_suffix_array(s):
     # Append a sentinel character '$' which is lexicographically smaller than any character in the string
     # s += '$'
     # return sort_cyclic_shifts(s)[1:]  # Remove the first entry because it corresponds to the '$'
+    if isinstance(s, str):
+        s = [ord(ch) for ch in s]
     return sa_is(s)
 
-def build_lcp_array(s, suffix_array):
-    n=len(s)
-    suffix_index=[0]*n
-    for i,v in enumerate(suffix_array): suffix_index[v]=i
-    lcp=[0]*n
-    k=0
-    for i in range(n):
-        ind = suffix_index[i]
-        if ind>0:
-            j=suffix_array[ind-1]
-            while i+k<n and j+k<n and s[i+k]==s[j+k]: k+=1
-            lcp[ind] = k
-        if k>0: k-=1
-    return lcp
 
 def sa_is(s):
     # Shift all values to be non-negative
@@ -262,7 +250,7 @@ def sa_is(s):
                         break
                     l += 1
                     r += 1
-                if l == end_l:
+                if l != end_l:
                     same = False
             if not same:
                 rec_upper += 1
@@ -382,4 +370,56 @@ class Manacher:
             return data[i+j+1]>j-i+1
         self.query=query
 
-        
+
+def build_lcp_array(s, suffix_array):
+    n=len(s)
+    suffix_index=[0]*n
+    for i,v in enumerate(suffix_array): suffix_index[v]=i
+    lcp=[0]*n
+    k=0
+    for i in range(n):
+        ind = suffix_index[i]
+        if ind>0:
+            j=suffix_array[ind-1]
+            while i+k<n and j+k<n and s[i+k]==s[j+k]: k+=1
+            lcp[ind] = k
+        if k>0: k-=1
+    return lcp
+
+
+class LCPQuery:
+    def __init__(self, s):
+        suffix_array = build_suffix_array(s)
+        n=len(s)
+        suffix_index=[0]*n
+        for i,v in enumerate(suffix_array): suffix_index[v]=i
+        lcp=[0]*n
+        k=0
+        for i in range(n):
+            ind = suffix_index[i]
+            if ind>0:
+                j=suffix_array[ind-1]
+                while i+k<n and j+k<n and s[i+k]==s[j+k]: k+=1
+                lcp[ind] = k
+            if k>0: k-=1
+        rmq = RMQ(lcp)
+        def query(i,j):
+            if i==j: return n-i
+            ii,jj = suffix_index[i], suffix_index[j]
+            if ii>jj: ii,jj=jj,ii
+            return lcp[rmq.query(ii+1, jj)]
+        self.query = query
+
+
+def countpre(a,b):
+    n=min(len(a), len(b))
+    for i in range(n):
+        if a[i]!=b[i]: return i
+    return n
+
+s = '3712406596575692459375265479356465193982807374167'
+lcpq = LCPQuery(s)
+print("checking", s)
+for i,j in combinations(range(len(s)), 2):
+    if lcpq.query(i,j) != countpre(s[i:], s[j:]):
+        print(i,j, s[i:], s[j:], lcpq.query(i,j))

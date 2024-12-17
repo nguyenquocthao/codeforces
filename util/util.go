@@ -610,6 +610,14 @@ func Count[T comparable](l []T) map[T]int {
 	return m
 }
 
+func ToSet[T comparable](l []T) map[T]bool {
+	m := map[T]bool{}
+	for _, v := range l {
+		m[v] = true
+	}
+	return m
+}
+
 func maximalmatching(m [][]int, n2 int) int {
 	n := len(m)
 	mt := Repeat(-1, n2)

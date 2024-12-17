@@ -326,56 +326,6 @@ func (dq *Deque[T]) ToList() []T {
 	return res
 }
 
-const MOD = 998244353
-
-// const MOD = 1000000007
-const maxn = 3000000
-
-var FAC = make([]int64, maxn+1)
-var IFAC = make([]int64, maxn+1)
-
-func init() {
-	FAC[0], FAC[1] = 1, 1
-	IFAC[0], IFAC[1] = 1, 1
-	for i := int64(2); i < maxn+1; i++ {
-		FAC[i] = (i * FAC[i-1]) % MOD
-		IFAC[i] = mod_inverse(FAC[i])
-	}
-}
-
-func pow(x, n int64) int64 {
-	x = x % MOD
-	res := int64(1)
-	for n > 0 {
-		if n%2 == 1 {
-			res = (res * x) % MOD
-		}
-		x = (x * x) % MOD
-		n = n / 2
-	}
-	return res
-}
-
-func mod_inverse(x int64) int64 {
-	return pow(x, MOD-2)
-}
-
-func comb(n, k int64) int64 {
-	if n < 0 || k > n {
-		return 0
-	}
-	inv := (IFAC[k] * IFAC[n-k]) % MOD
-	return (FAC[n] * inv) % MOD
-}
-
-func mod[T int | int64](v T) T {
-	res := v % MOD
-	if res < 0 {
-		res += MOD
-	}
-	return res
-}
-
 var mfactors = make([]int, 3000001)
 
 func init() {
@@ -424,73 +374,34 @@ func factorize(v int) []int {
 	return res
 }
 
-func countGCD(n int) [][2]int {
-	factors := factorize(n)
-	m := map[int]int{}
-	for _, f := range factors {
-		m[f] = n / f
+func ToSet[T comparable](l []T) map[T]bool {
+	m := map[T]bool{}
+	for _, v := range l {
+		m[v] = true
 	}
-	for i := len(factors) - 1; i >= 0; i-- {
-		v := factors[i]
-		for _, mul := range factorize(n / v) {
-			if mul > 1 {
-				m[v] -= m[v*mul]
-			}
-		}
-	}
-	res := make([][2]int, len(factors))
-	for i, f := range factors {
-		res[i] = [2]int{f, m[f]}
-	}
-	return res
+	return m
 }
 
-func run(a, b, c int, d []int) int64 {
-	gcdv := 0
-	for _, v := range d {
-		gcdv = gcd(gcdv, v)
-	}
-	cal := func(lrepeat int) int64 {
-		cur, res := int64(0), int64(1)
-		for _, v := range d {
-			v2 := int64(v / lrepeat)
-			res = res * comb(cur+v2, v2) % MOD
-			cur += v2
-		}
-		return res
-	}
-	m := map[int]int{1: 1}
-	for _, v := range []int{a, b, c} {
-		cgcd := countGCD(v)
-		m2 := map[int]int{}
-		for j := len(cgcd) - 1; j >= 0; j-- {
-			x := v / cgcd[j][0]
-			if gcdv%x > 0 {
-				continue
-			}
-			for val, mul := range m {
-				m2[lcm(val, x)] += cgcd[j][1] * mul
-			}
-		}
-		m = m2
-	}
+// func run(s string) string {
+// 	res := []byte(s)
+// 	slices.Reverse(res)
+// 	for i, v := range res {
+// 		if v == 'p' {
+// 			res[i] = 'q'
+// 		} else if v == 'q' {
+// 			res[i] = 'p'
+// 		}
+// 	}
+// 	return string(res)
 
-	res := int64(0)
-	for val, mul := range m {
-		res = mod(res + mod(int64(mul)*cal(val)))
-	}
-
-	return res * mod_inverse(int64(a)*int64(b)*int64(c)) % MOD
-}
+// }
 
 func main() {
 
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt()
-		fmt.Println(run(l[0], l[1], l[2], readSliceInt()))
-
+		fmt.Println((readInt() - 1))
 	}
 
 }

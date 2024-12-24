@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // normal table: development
 // pub: pub_*
@@ -10,22 +13,35 @@ func main() {
 
 	// publicskillid := "5855b77891fd47f09890b7480d14a72b"
 	// fptskillid := "8ade0166715f495fad52aec4032b3a7f"
+	// ralliskillid := "53407b3bfdd4440291f7f97e4676d78b"
 
 	// file, _ := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 
 	db := GetDb()
 	records := []Intents{}
-	db.Raw(`select * from intents where skillid='5855b77891fd47f09890b7480d14a72b'
+	db.Raw(`select * from intents where skillid='53407b3bfdd4440291f7f97e4676d78b'
 		`).Find(&records)
-	PrintFileAndLineInfo(records)
+	// PrintFileAndLineInfo(records)
 	count := 0
-	return
+	// return
+
+	data := []map[string]any{}
+	fmt.Println(29, len(records))
 
 	for _, v := range records {
-		v.Skillid = "8ade0166715f495fad52aec4032b3a7f"
-		db.Model(&v).Create(&v)
+		// v.Skillid = "8ade0166715f495fad52aec4032b3a7f"
+		// db.Model(&v).Create(&v)
+		dt := Data{}
+		json.Unmarshal([]byte(*v.Data), &dt)
+
+		data = append(data, map[string]any{
+			"id":      v.Intentid,
+			"name":    v.Name,
+			"actions": *NewJsonPsql(dt.Actions),
+		})
 	}
 
+	WriteJson(data, "x.json")
 	return
 
 	// for _, v := range records {

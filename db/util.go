@@ -91,6 +91,28 @@ func Convert[T any](v interface{}) T {
 // 	return &x
 // }
 
+func WriteJson(data any, filename string) {
+	// Create a file to write the JSON data
+	file, err := os.Create(filename)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	// Encode the struct to JSON and write to the file
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ") // Pretty-print the JSON
+
+	err = encoder.Encode(data)
+	if err != nil {
+		fmt.Println("Error encoding JSON:", err)
+		return
+	}
+
+	// fmt.Println("JSON file written successfully.")
+}
+
 type Intents struct {
 	Skillid     string
 	Intentid    string

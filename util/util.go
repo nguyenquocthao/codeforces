@@ -806,3 +806,14 @@ func IfElse[T any](condition bool, a, b T) T {
 		return b
 	}
 }
+
+func ToInt64(v interface{}) (int64, error) {
+	switch val := v.(type) {
+	case int:
+		return int64(val), nil
+	case int64:
+		return val, nil
+	default:
+		return 0, fmt.Errorf("cannot convert type %s to int64", reflect.TypeOf(v))
+	}
+}

@@ -28,6 +28,16 @@ func (u UnionFind) NGroup() int {
 	return res
 }
 
+func (u UnionFind) GetRoots() []int {
+	res := make([]int, 0, len(u))
+	for i, v := range u {
+		if i == v {
+			res = append(res, i)
+		}
+	}
+	return res
+}
+
 // type UnionFind[T comparable] map[T]T
 
 // func (u UnionFind[T]) Find(x T) T {
@@ -371,4 +381,24 @@ func NewFenwickTree(a []int) *FenwickTree {
 		}
 	}
 	return res
+}
+
+type CTNode struct {
+	I           int
+	Left, Right *CTNode
+}
+
+func CatesianTree(a []int64) *CTNode {
+	st := NewStack[*CTNode]()
+	for i, v := range a {
+		node := &CTNode{i, nil, nil}
+		for st.Len() > 0 && a[st.Top().I] > v {
+			node.Left = st.Pop()
+		}
+		if st.Len() > 0 {
+			st.Top().Right = node
+		}
+		st.Push(node)
+	}
+	return st.ToList()[0]
 }

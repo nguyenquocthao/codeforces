@@ -491,16 +491,45 @@ func (info *Info) Debug() {
 
 }
 
+func run(a []int64, queries [][]int) {
+	for _, q := range queries {
+		a[q[0]-1] += int64(q[1])
+	}
+	// fmt.Println(a)
+	infos, k := []*Info{}, 1
+	for k <= len(a) {
+		infos = append(infos, NewInfo(a, k))
+		k <<= 1
+	}
+	nq := len(queries)
+	res := make([]int, nq)
+	for i := nq - 1; i >= 0; i-- {
+		ind, v := queries[i][0]-1, queries[i][1]
+		for _, info := range infos {
+			// fmt.Println(info)
+			// info.Debug()
+			res[i] = max(res[i], info.GetLongest())
+			info.Dec(ind, v)
+		}
+		a[ind] -= int64(v)
+		// fmt.Println(a)
+	}
+	for _, v := range res {
+		fmt.Println(v)
+	}
+
+}
+
 func main() {
 
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt()
-		if l[1] >= -1 {
-			fmt.Println("YES")
-		} else {
-			fmt.Println("NO")
+		queries := make([][]int, readSliceInt()[1])
+		a := readSliceInt64()
+		for i := range queries {
+			queries[i] = readSliceInt()
 		}
+		run(a, queries)
 	}
 }

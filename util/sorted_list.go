@@ -167,3 +167,11 @@ func (sl *SortedList) At(k int) int {
 	i, j := sl.findKth(k)
 	return sl.micros[i][j]
 }
+
+func (sl *SortedList) ToList() []int {
+	res := []int{}
+	for _, l := range sl.micros {
+		res = append(res, l...)
+	}
+	return res
+}

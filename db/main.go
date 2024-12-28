@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
-
+import (
+	"fmt"
+	"encoding/json"
+	"os"
+)
 // normal table: development
 // pub: pub_*
 // production: prod_*
@@ -19,12 +22,26 @@ func main() {
 		`).Find(&records)
 	PrintFileAndLineInfo(records)
 	count := 0
-	return
+	// return
 
-	for _, v := range records {
-		v.Skillid = "8ade0166715f495fad52aec4032b3a7f"
-		db.Model(&v).Create(&v)
+	// for _, v := range records {
+	// 	v.Skillid = "53407b3bfdd4440291f7f97e4676d78b"
+	// 	fmt.Println(v.Intentid, v.Name)
+	// 	db.Model(&v).Create(&v)
+	// }
+
+	data:=[]map[string]any{}
+	for _,v:=range records{
+		data=append(data, map[string]any{
+			"intentid": v.Intentid,
+			"name": v.Name,
+
+		})
 	}
+	fmt.Println(data)
+	jsonData,_ := json.Marshal(data)
+	os.WriteFile("intents.json", jsonData,   0644)
+
 
 	return
 

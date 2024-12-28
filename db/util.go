@@ -19,17 +19,6 @@ var (
 	DATABASE_URL = fmt.Sprintf(os.Getenv("DATABASE_URL"), PASS)
 )
 
-// const (
-// 	DATABASE_URL = "postgres://skills:249zjfvSXscRznZnnYK72tvOH5RWyh8X@localhost:5435/skills"
-// )
-
-const (
-
-// DATABASE_URL = "postgres://skills:w2mhUEpjIuFW2ukSKw3K9lTNt1eabq5k@localhost:5435/skills"
-// DATABASE_URL = "postgres://skills:w2mhUEpjIuFW2ukSKw3K9lTNt1eabq5k@localhost:5435/skills"
-
-)
-
 func GetDb() *gorm.DB {
 	if db != nil {
 		return db

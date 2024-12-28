@@ -37,60 +37,14 @@ val M = 1000
 val K = 10
 
 fun main() {
-    // initFAC()
-    // repeat(1) {
-    var (n, q) = readSlice<Int>()
-    var health = readSlice<Int>().toIntArray()
-    var strength = readSlice<Int>().toIntArray()
-    var queries = Array(q) { readSlice<Int>() }
-    // run(a,b,queries)
-
-    var acc = IntArray(n+1)
-    for ((i,v) in strength.withIndex()){
-        acc[i+1]=acc[i]+v
-    }
-    var toadd = Array(n){mutableListOf<Int>()}
-    for ((i,h) in health.withIndex()){
-        for (k in 1 until K+1){
-            var j = bsearch(0, i){idx -> acc[idx]>acc[i] - divceil(h, k)}
-            if (j<i){
-                toadd[j].add(i)
-            }
+    var a = intArrayOf(0,1,2,0,1,0,0,1,0,0,0)
+    repeat(readInt()){
+        var v = readInt()
+        if (v>=10){
+            println(0)
+        } else {
+            println(a[v])
         }
-    }
-    var toquery = Array(n){mutableListOf<Int>()}
-    for ((i,qu) in queries.withIndex()){
-        toquery[qu[0]-1].add(i)
-    }
-    var tree = FenwickTree(IntArray(n){1})
-    var res = IntArray(q)
-    var ml = IntArray(M)
-    for (i in 0 until n){
-        for(j in toadd[i]){
-            tree.add(j, 1)
-        }
-        if (toquery[i].size==0){
-            continue
-        }
-        var s = strength[i]
-        for (j in 1 until M){
-            if (i+j>=n){
-                break
-            }
-            ml[j] = ml[j-1] + divceil(health[i+j], s)
-            s+=strength[i+j]
-        }
-        for (qi in toquery[i]){
-            var r = queries[qi][1]-1
-            if (r-i < M){
-                res[qi] = ml[r-i]
-            } else {
-                res[qi] = ml[M-1] + tree.rangeSum(i+M, r)
-            }
-        }
-    }
-    for(v in res){
-        println(v)
     }
 
 

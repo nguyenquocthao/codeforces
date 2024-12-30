@@ -37,65 +37,53 @@ val M = 1000
 val K = 10
 
 fun main() {
-    var a = intArrayOf(0,1,2,0,1,0,0,1,0,0,0)
     repeat(readInt()){
-        var v = readInt()
-        if (v>=10){
-            println(0)
-        } else {
-            println(a[v])
-        }
+        var (k,m) =readSlice<Int>()
+        m%=(3*k)
+        println(max(0, 2*k -m ))
+
     }
 
 
 }
 
-
-fun bsearch(lo: Int, hi: Int, f: (Int) -> Boolean): Int {
-    var l = lo
-    var r = hi - 1
-    var res = hi
-    while (l <= r) {
-        var mid = (l + r) / 2
-        if (f(mid)) {
-            res = mid
-            r = mid - 1
-        } else {
-            l = mid + 1
-        }
-    }
-    return res
-}
-
-class FenwickTree(a: IntArray) {
-    var tree = intArrayOf(0) + a
-    init {
-        for (i in 1 until tree.size) {
-            var j = i + (i and -i)
-            if (j < tree.size) {
-                tree[j] += tree[i]
+class Tree(p: List<Int>, mask:Long){
+    var mparent: Array<Int>
+    var mchild: Array<MutableList<Int>>
+    init{
+        val n = p.size
+        mparent = Array(n){0}; mchild = Array(n){mutableListOf<Int>()}; var mtrue = Array(n){it}
+        fun gettrue(i:Int):Int{
+            if (i==0){
+                return 0
             }
+            if ((mask shr mtrue[i]) and 1L == 0L){
+                mtrue[i] = gettrue(p[i])
+            }
+            return mtrue[i]
+        }
+        for ((i,v) in p.withIndex()){
+            if (i==0 || (mask shr i) and 1L == 0L){
+                continue
+            }
+            val p = gettrue(v)
+            mparent[i] = p
+            mchild[p].add(i)
         }
     }
-    fun add(i: Int, added: Int) {
-        // a[i]+=added
-        var i = i + 1
-        while (i < tree.size) {
-            tree[i] += added
-            i += i and -i
-        }
-    }
-    fun sum(i: Int): Int {
-        var res = 0
-        var i = i
-        while (i > 0) {
-            res += tree[i]
-            i -= i and -i
+
+    fun getde(x:Int):Long{
+        var res = 0L
+        for (j in mchild[x]){
+            res = res or (1L shl j) or getde(j)
         }
         return res
     }
-    fun rangeSum(l: Int, r: Int): Int {
-        // index (from 0) from l to r inclusive
-        return sum(r + 1) - sum(l)
+    fun getan(x:Int):Long{
+        var res = (1L shl mparent[x])
+        if (res==1L){
+            return 0L
+        }
+        return res or getan(mparent[x])
     }
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"container/heap"
 	"fmt"
 	"os"
 	"reflect"
@@ -346,20 +345,16 @@ func (u UnionFind) GetRoots() []int {
 	return res
 }
 
-type HItem struct {
-	Size, I int
-}
-
-type Heap []HItem
+type Heap []int
 
 func (h Heap) Len() int           { return len(h) }
-func (h Heap) Less(i, j int) bool { return h[i].Size > h[j].Size }
+func (h Heap) Less(i, j int) bool { return h[i] > h[j] }
 func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 
 func (h *Heap) Push(x any) {
 	// Push and Pop use pointer receivers because they modify the slice's length,
 	// not just its contents.
-	*h = append(*h, x.(HItem))
+	*h = append(*h, x.(int))
 }
 
 func (h *Heap) Pop() any {
@@ -382,113 +377,77 @@ func ToInt64(v interface{}) int64 {
 	}
 }
 
-type Info struct {
-	K  int
-	A  []int64
-	Uf UnionFind
-	M  []*Counter
-	H  *Heap
-}
-
-func NewInfo(a []int64, k int) *Info {
-	n := len(a)
-	info := &Info{k, a, UnionFind(makeRange(0, n)), make([]*Counter, n), &Heap{}}
-	for i, v := range a {
-		if info.Validv(v) {
-			info.M[i] = NewCounter()
-			info.M[i].Inc(int(v), 1)
-			if i > 0 && info.Validv(a[i-1]) {
-				info.Merge(i-1, i)
+func run(a, b [][]int) bool {
+	nrow, ncol := len(a), len(a[0])
+	domask := func(a [][]int, mask int) [][]bool {
+		res := make([][]bool, nrow)
+		for i, r := range a {
+			res[i] = make([]bool, ncol)
+			for j, v := range r {
+				if v&mask > 0 {
+					res[i][j] = true
+				}
 			}
 		}
+		return res
 	}
-	info.InitH()
-
-	return info
-}
-
-func (info *Info) InitH() {
-	info.H = &Heap{}
-	for _, i := range info.Uf.GetRoots() {
-		info.CheckUpdateH(i)
-	}
-}
-
-func (info *Info) CheckUpdateH(i int) {
-	m := info.GetCounter(i)
-	if m != nil && m.Nunique() == info.K {
-		heap.Push(info.H, HItem{m.Nitem, i})
-	}
-}
-
-func (info *Info) GetLongest() int {
-	if info.H.Len() > len(info.A) {
-		info.InitH()
-	}
-	for info.H.Len() > 0 {
-		it := (*info.H)[0]
-		m := info.GetCounter(it.I)
-		if it.Size != m.Nitem || m.Nunique() != info.K {
-			// continue
-			heap.Pop(info.H)
+	keyf := func(isrow bool, i int) int {
+		if isrow {
+			return ncol + i
 		} else {
-			return it.Size
+			return i
 		}
 	}
-	return 0
-}
-
-func (info *Info) Validv(v interface{}) bool {
-	return ToInt64(v) < int64(info.K)
-}
-
-func (info *Info) Merge(i, j int) {
-	i, j = info.Uf.Find(i), info.Uf.Find(j)
-	if i == j {
-		return
-	}
-	if info.M[i].Nunique() < info.M[j].Nunique() {
-		i, j = j, i
-	}
-
-	info.Uf[j] = i
-	info.M[i].Merge(info.M[j])
-	info.M[j] = nil
-}
-
-func (info *Info) GetCounter(i int) *Counter {
-	return info.M[info.Uf.Find(i)]
-}
-
-func (info *Info) Dec(i int, v int) {
-	if info.Validv(info.A[i]) {
-		info.GetCounter(i).Inc(int(info.A[i]), -1)
-	}
-	if info.Validv(info.A[i] - int64(v)) {
-		v2 := int(info.A[i] - int64(v))
-		m := info.GetCounter(i)
-		if m == nil {
-			m = NewCounter()
-			info.M[i] = m
+	check := func(ba, bb [][]bool) bool {
+		graph := make([][]int, nrow+ncol)
+		for i, r := range bb {
+			for j, v := range r {
+				if v {
+					// row operation => col operation
+					graph[keyf(true, i)] = append(graph[keyf(true, i)], keyf(false, j))
+				} else {
+					// col operation => row operation
+					graph[keyf(false, j)] = append(graph[keyf(false, j)], keyf(true, i))
+				}
+			}
 		}
-		m.Inc(v2, 1)
-		if i > 0 && info.Validv(info.A[i-1]) {
-			info.Merge(i-1, i)
+		marked := make([]int, len(graph))
+		var hascycle func(i int) bool
+		hascycle = func(i int) bool {
+			if marked[i] > 0 {
+				return marked[i] == 2
+			}
+			marked[i] = 2
+			for _, j := range graph[i] {
+				if hascycle(j) {
+					return true
+				}
+			}
+			marked[i] = 1
+			return false
 		}
-		if i+1 < len(info.A) && info.Validv(info.A[i+1]) {
-			info.Merge(i, i+1)
+		for i, r := range ba {
+			for j := range r {
+				if ba[i][j] && !bb[i][j] {
+					if hascycle(keyf(true, i)) {
+						return false
+					}
+				} else if !ba[i][j] && bb[i][j] {
+					if hascycle(keyf(false, j)) {
+						return false
+					}
+				}
+			}
 		}
-		info.CheckUpdateH(i)
+		return true
 	}
-}
-
-func (info *Info) Debug() {
-	fmt.Println("k=", info.K, info.H)
-	for _, i := range info.Uf.GetRoots() {
-		m := info.M[i]
-		fmt.Println(i, m)
+	for nb := 0; nb <= 30; nb++ {
+		ba, bb := domask(a, 1<<nb), domask(b, 1<<nb)
+		if !check(ba, bb) {
+			return false
+		}
 	}
-
+	return true
 }
 
 func main() {
@@ -497,7 +456,14 @@ func main() {
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
 		l := readSliceInt()
-		if l[1] >= -1 {
+		a, b := make([][]int, l[0]), make([][]int, l[0])
+		for i := range a {
+			a[i] = readSliceInt()
+		}
+		for i := range b {
+			b[i] = readSliceInt()
+		}
+		if run(a, b) {
 			fmt.Println("YES")
 		} else {
 			fmt.Println("NO")

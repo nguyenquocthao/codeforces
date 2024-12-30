@@ -423,3 +423,38 @@ print("checking", s)
 for i,j in combinations(range(len(s)), 2):
     if lcpq.query(i,j) != countpre(s[i:], s[j:]):
         print(i,j, s[i:], s[j:], lcpq.query(i,j))
+
+
+class FenwickTree2D:
+    def __init__(self, n):
+        self.n = n
+        self.BIT = [[0] * (n + 1) for _ in range(n + 1)]
+        self.grid = [[0] * n for _ in range(n)]
+
+    def _update(self, i, j, delta):
+        x = i + 1
+        while x <= self.n:
+            y = j + 1
+            while y <= self.n:
+                self.BIT[x][y] += delta
+                y += y & -y
+            x += x & -x
+    
+    def update(self, i, j, v):
+        delta = v - self.grid[i][j]
+        self.grid[i][j] = v
+        self._update(i, j, delta)
+
+    def _sum(self, i, j):
+        total = 0
+        x = i + 1
+        while x > 0:
+            y = j + 1
+            while y > 0:
+                total += self.BIT[x][y]
+                y -= y & -y
+            x -= x & -x
+        return total
+
+    def sumrange(self, i, j):
+        return self._sum(i, j)

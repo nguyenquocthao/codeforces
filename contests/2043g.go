@@ -278,57 +278,169 @@ func NewStack[T any]() *Stack[T] {
 	return &Stack[T]{data: []T{}, i: 0}
 }
 
-func run(edges [][]int, k int) int {
-	m := make([][]int, len(edges)+2)
-	for _, e := range edges {
-		i, j := e[0], e[1]
-		m[i] = append(m[i], j)
-		m[j] = append(m[j], i)
+const BLOCK_SIZE = 300
+
+type Gridg struct {
+	N      int
+	Prefix [][]int
+	Data   [][]int
+	RowAcc [][]int
+	Dirty  []bool
+}
+
+func NewGridg(a []int) *Gridg {
+	n := divceil(len(a), BLOCK_SIZE)
+	g := &Gridg{
+		N:      n,
+		Prefix: make([][]int, n+1),
+		Data:   make([][]int, n),
+		RowAcc: make([][]int, n),
+		Dirty:  make([]bool, n),
 	}
-	var dp func(i, prev int) int
-	feasible := func(x int) bool {
-		ncom := 0
-		dp = func(i, prev int) int {
-			size := 1
-			for _, j := range m[i] {
-				if j == prev {
-					continue
-				}
-				size += dp(j, i)
-			}
-			if size >= x {
-				ncom += 1
-				return 0
-			} else {
-				return size
-			}
-		}
-		dp(1, 1)
-		return ncom > k
+	for i := range g.Prefix {
+		g.Prefix[i] = make([]int, len(a)+1)
 	}
-	l, r, res := 1, len(m)-1, 0
-	for l <= r {
-		mid := (l + r) / 2
-		if feasible(mid) {
-			res, l = mid, mid+1
-		} else {
-			r = mid - 1
+	for i := range g.Data {
+		g.Data[i] = make([]int, n)
+		g.RowAcc[i] = make([]int, n+1)
+	}
+	for i, v := range a {
+		g.Inc(i/BLOCK_SIZE, v)
+	}
+	return g
+}
+
+func (g *Gridg) Countr(i, j, v int) int {
+	return g.Prefix[j+1][v] - g.Prefix[i][v]
+}
+
+func (g *Gridg) Inc(i, v int) {
+	if g.Prefix[g.N][v] > 0 {
+		for j := 0; j < g.N; j++ {
+			g.Data[i][j] += g.Countr(j, j, v)
 		}
+		g.Dirty[i] = true
+	}
+	for j := i + 1; j <= g.N; j++ {
+		g.Prefix[j][v] += 1
+	}
+}
+
+func (g *Gridg) Dec(i, v int) {
+	for j := i + 1; j <= g.N; j++ {
+		g.Prefix[j][v] -= 1
+	}
+	if g.Prefix[g.N][v] > 0 {
+		for j := 0; j < g.N; j++ {
+			g.Data[i][j] -= g.Countr(j, j, v)
+		}
+		g.Dirty[i] = true
+	}
+}
+
+func (g *Gridg) DoAcc(i int) {
+	for j := 0; j < g.N; j++ {
+		g.RowAcc[i][j+1] = g.RowAcc[i][j] + g.Data[i][j]
+	}
+}
+
+func (g *Gridg) Query(i, j int) int64 {
+	res := int64(0)
+	for k := i; k <= j; k++ {
+		if g.Dirty[k] {
+			g.DoAcc(k)
+			g.Dirty[k] = false
+		}
+		res += int64(g.RowAcc[k][j+1] - g.RowAcc[k][i])
 	}
 	return res
 }
 
+func run(arr []int, queries [][]int) {
+	// fmt.Println(arr, queries)
+	n := len(arr)
+	last := 0
+	mod := func(v int) int {
+		x := v + last
+		if x >= n {
+			x -= n
+		}
+		return x + 1
+	}
+	res := make([]string, 0, len(queries))
+	grid := NewGridg(arr)
+	count := make([]int64, n+1)
+	for _, q := range queries {
+		if q[0] == 1 {
+			p, x := mod(q[1])-1, mod(q[2])
+			// fmt.Println("query1", arr, p, x)
+			if arr[p] != x {
+				grid.Dec(p/BLOCK_SIZE, arr[p])
+				arr[p] = x
+				grid.Inc(p/BLOCK_SIZE, arr[p])
+			}
+		} else {
+			l, r := mod(q[1])-1, mod(q[2])-1
+			if l > r {
+				l, r = r, l
+			}
+			npair, size := int64(0), int64(r-l+1)
+
+			// fmt.Println("query2", arr, l, r)
+			bi, bj := (l/BLOCK_SIZE)+1, (r/BLOCK_SIZE)-1
+			if bi > bj {
+				for k := l; k <= r; k++ {
+					npair += count[arr[k]]
+					count[arr[k]] += 1
+				}
+				for k := l; k <= r; k++ {
+					count[arr[k]] = 0
+				}
+			} else {
+				npair += grid.Query(bi, bj)
+				lo, hi := bi*BLOCK_SIZE, (bj+1)*BLOCK_SIZE
+				for k := l; k < lo; k++ {
+					npair += count[arr[k]] + int64(grid.Countr(bi, bj, arr[k]))
+					count[arr[k]] += 1
+				}
+				for k := hi; k <= r; k++ {
+					npair += count[arr[k]] + int64(grid.Countr(bi, bj, arr[k]))
+					count[arr[k]] += 1
+				}
+				for k := l; k < lo; k++ {
+					count[arr[k]] = 0
+				}
+				for k := hi; k <= r; k++ {
+					count[arr[k]] = 0
+				}
+
+			}
+
+			npair = size*(size-1)/2 - npair
+			res = append(res, fmt.Sprint(npair))
+			if npair < 0 {
+				break
+			}
+			last = int(npair % int64(n))
+
+		}
+	}
+	fmt.Println(strings.Join(res, " "))
+
+}
+
 func main() {
 
-	ntest := readInt()
-	// ntest := 1
+	// ntest := readInt()
+	ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt()
-		edges := make([][]int, l[0]-1)
-		for i := range edges {
-			edges[i] = readSliceInt()
+		readInt()
+		a := readSliceInt()
+		queries := make([][]int, readInt())
+		for i := range queries {
+			queries[i] = readSliceInt()
 		}
-		fmt.Println(run(edges, l[1]))
+		run(a, queries)
 
 	}
 }

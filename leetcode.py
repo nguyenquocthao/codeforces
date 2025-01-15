@@ -458,3 +458,13 @@ class FenwickTree2D:
 
     def sumrange(self, i, j):
         return self._sum(i, j)
+
+MOD = 10**9 + 7
+@lru_cache(None)
+def fac(v):
+    if v==0: return 1
+    return v * fac(v-1)%MOD
+def mod_inverse(v):
+    return pow(v, MOD-2, MOD)
+def comb(n,k):
+    return fac(n) * mod_inverse(fac(k) * fac(n-k)) % MOD

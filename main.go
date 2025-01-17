@@ -278,44 +278,24 @@ func NewStack[T any]() *Stack[T] {
 	return &Stack[T]{data: []T{}, i: 0}
 }
 
-func run(edges [][]int, k int) int {
-	m := make([][]int, len(edges)+2)
-	for _, e := range edges {
-		i, j := e[0], e[1]
-		m[i] = append(m[i], j)
-		m[j] = append(m[j], i)
-	}
-	var dp func(i, prev int) int
-	feasible := func(x int) bool {
-		ncom := 0
-		dp = func(i, prev int) int {
-			size := 1
-			for _, j := range m[i] {
-				if j == prev {
-					continue
-				}
-				size += dp(j, i)
-			}
-			if size >= x {
-				ncom += 1
-				return 0
-			} else {
-				return size
-			}
+func run(a []int) bool {
+	n := len(a)
+	prev := a[n-1]
+	for i := n - 1; i >= 0; i-- {
+		if a[i] <= prev {
+			prev = a[i]
+			continue
 		}
-		dp(1, 1)
-		return ncom > k
-	}
-	l, r, res := 1, len(m)-1, 0
-	for l <= r {
-		mid := (l + r) / 2
-		if feasible(mid) {
-			res, l = mid, mid+1
+		x, y := a[i]/10, a[i]%10
+		if x <= y && y <= prev {
+			prev = x
 		} else {
-			r = mid - 1
+			return false
 		}
+
 	}
-	return res
+	return true
+
 }
 
 func main() {
@@ -323,12 +303,12 @@ func main() {
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt()
-		edges := make([][]int, l[0]-1)
-		for i := range edges {
-			edges[i] = readSliceInt()
+		readInt()
+		if run(readSliceInt()) {
+			fmt.Println("YES")
+		} else {
+			fmt.Println("NO")
 		}
-		fmt.Println(run(edges, l[1]))
 
 	}
 }

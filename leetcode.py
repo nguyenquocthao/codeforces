@@ -458,3 +458,48 @@ class FenwickTree2D:
 
     def sumrange(self, i, j):
         return self._sum(i, j)
+
+
+class Node:
+    def __init__(self, lo,hi,left,right):
+        self.lo, self.hi, self.left, self.right = lo,hi,left,right
+        self.ms, self.dirty, self.total, self.lv, self.rv = 0,True,0,0,0
+    def update(self, indexes, v):
+        # print('update', self.lo, self.hi, indexes, v)
+        if not indexes: return
+        self.dirty=True
+        if self.lo==self.hi and len(indexes)==1:
+            self.total=v
+            return
+        i = bisect.bisect_right(indexes, self.left.hi)
+        self.left.update(indexes[:i], v)
+        self.right.update(indexes[i:], v)
+    def fix(self):
+        if not self.dirty: return
+        self.dirty=False
+        if self.lo==self.hi:
+            self.ms= self.lv= self.rv = max(self.total, 0)
+            return
+        self.left.fix()
+        self.right.fix()
+        self.ms=max(self.left.ms, self.right.ms, self.left.rv + self.right.lv)
+        self.total = self.left.total+self.right.total
+        self.lv = max(self.left.lv, self.left.total + self.right.lv)
+        self.rv = max(self.right.rv, self.left.rv + self.right.total)
+    def query(self):
+        self.fix()
+        return self.ms
+
+def createnode(l):
+    def create(i, j):
+        if i == j:
+            node = Node(i, j,None,None)
+            node.total = l[i]
+            return node
+        mid = (i + j) // 2
+        left_child = create(i, mid)
+        right_child = create(mid + 1, j)
+        node = Node(i, j, left_child, right_child)
+        node.fix()  # Ensure the node's values are initialized correctly
+        return node
+    return create(0, len(l) - 1)

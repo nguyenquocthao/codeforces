@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -240,30 +241,136 @@ func Contains[T comparable](l []T, x T) bool {
 	return false
 }
 
-func run(a, b, c, d int) int {
-	if a > c {
-		a, b, c, d = c, d, a, b
+func zfunction(s string) []int {
+	n := len(s)
+	z, left, right := make([]int, n), 0, 0
+	for i := 1; i < n; i++ {
+		z[i] = Max(0, Min(right-i, z[i-left]))
+		for i+z[i] < n && s[i+z[i]] == s[z[i]] {
+			z[i] += 1
+		}
+		if i+z[i] > right {
+			left, right = i, i+z[i]
+		}
 	}
-	if b < c {
-		return 1
+	return z
+}
+
+func mincomponent(s string) int {
+	n := len(s)
+	table, i := make([]int, n), 0
+	for j := 1; j < n; j++ {
+		ch := byte(s[j])
+		for i > 0 && s[i] != ch {
+			i = table[i-1]
+		}
+		if s[i] == ch {
+			i += 1
+		}
+		table[j] = i
 	}
-	res := min(b, d) - max(a, c) + 2
-	if b == d {
-		res -= 1
+	// fmt.Println(s, table, i)
+	for n%(n-i) > 0 {
+		i = table[i-1]
 	}
-	if a == c {
-		res -= 1
+	table = nil
+	return n - i
+
+}
+
+type SegNode struct {
+	Lo, Hi      int
+	Left, Right *SegNode
+	V           int
+	Data        [4]int
+}
+
+func NewSegTree(a []int) *SegNode {
+	var create func(lo, hi int) *SegNode
+	create = func(lo, hi int) *SegNode {
+		if lo == hi {
+			// [min x+ax, max x+ax, min x-ax, max x-ax]
+			return &SegNode{lo, hi, nil, nil, 0, [4]int{a[lo] + lo, a[lo] + lo, lo - a[lo], lo - a[lo]}}
+		} else {
+			mid := (lo + hi) / 2
+			res := &SegNode{lo, hi, create(lo, mid), create(mid+1, hi), 0, [4]int{0, 0, 0, 0}}
+			res.Fix()
+			return res
+
+		}
 	}
-	return res
-	// return max(res, 1)
+	return create(0, len(a)-1)
+}
+
+// func BaseNode(i, v int) *SegNode {
+// 	return &SegNode{i, i, nil, nil, 0, [4]int{i + v, i + v, i - v, i - v}}
+// }
+
+func (node *SegNode) Fix() {
+	node.V = max(node.Left.V, node.Right.V, node.Left.Data[1]-node.Right.Data[0], node.Left.Data[3]-node.Right.Data[2])
+	node.Data = [4]int{min(node.Left.Data[0], node.Right.Data[0]), max(node.Left.Data[1], node.Right.Data[1]),
+		min(node.Left.Data[2], node.Right.Data[2]), max(node.Left.Data[3], node.Right.Data[3])}
+}
+
+func (node *SegNode) Update(i, v int) {
+	// fmt.Println("update", i, v, node.Lo, node.Hi)
+	if node.Lo == i && i == node.Hi {
+		node.Data = [4]int{i + v, i + v, i - v, i - v}
+		return
+	}
+	if i <= node.Left.Hi {
+		node.Left.Update(i, v)
+	} else {
+		node.Right.Update(i, v)
+	}
+	node.Fix()
+
+}
+
+// func (s *SegTree) Query(i, j int) int64 {
+// 	i, j = i+s.N, j+s.N
+// 	chain, rvChain := []Matrix{}, []Matrix{}
+// 	for i < j {
+// 		if i&1 > 0 {
+// 			chain = append(chain, s.Data[i])
+// 			i += 1
+// 		}
+// 		if j&1 > 0 {
+// 			j -= 1
+// 			rvChain = append(rvChain, s.Data[j])
+// 		}
+// 		i, j = i>>1, j>>1
+// 	}
+// 	slices.Reverse(rvChain)
+// 	chain = append(chain, rvChain...)
+// 	res := chain[0]
+// 	for i := 1; i < len(chain); i++ {
+// 		res = CombineMatrix(res, chain[i])
+// 	}
+// 	return res[0][4]
+// }
+
+func run(a []int, k int) int {
+	slices.Sort(a)
+	n := len(a)
+	dif := 0
+	for i := n - 1; i > 0; i -= 2 {
+		dif += a[i] - a[i-1]
+	}
+	added := 0
+	if n%2 == 1 {
+		added += a[0]
+	}
+	return added + max(0, dif-k)
 }
 
 func main() {
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		x, y := readSliceInt(), readSliceInt()
-		fmt.Println(run(x[0], x[1], y[0], y[1]))
+		l := readSliceInt()
+		a := readSliceInt()
+		fmt.Println(run(a, l[1]))
 
 	}
 }

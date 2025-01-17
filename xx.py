@@ -5,17 +5,44 @@ from math import gcd
 from functools import lru_cache
 
 
-def union(a,b):
-    res=[]
-    i,j=0,0
-    while i<len(a) and j<len(b):
-        if a[i]>b[j]:
-            res.append(a[i])
-            i+=1
-        else:
-            res.append(b[j])
-            j+=1
-    return res
+# def run(l,r):
+#     print('running', l, r)
+#     cur,res = 0, []
+#     for a,b,c in combinations(range(l,r+1),3):
+#         v = (a^b)+(b^c)+ (c^a)
+#         if v>cur: cur,res = v, [(a,b,c)]
+#         elif v==cur: res.append((a,b,c))
+#     print(cur, res)
 
-a,b = [10,9,3,1], [20,2,1]
-print(a,b,union(a,b))
+# run(0,2)
+# run(0,8)
+# run(1,3)
+# run(6,22)
+# run(128,137)
+
+def update(tup, i):
+    l=list(tup)
+    v, l[i] = divmod(tup[i], 2)
+    if i>0: l[i-1]+=v
+    if i+1 < len(l): l[i+1]+=v
+    return tuple(l)
+
+cached = {}
+def run(tup):
+    if tup in cached: return max(cached[tup])
+    if all(v<=1 for v in tup): 
+        cached[tup] = [0]
+        return 0
+    res=[]
+    if tup[0]>=2:
+        res.append(tup[0]//2 + run(update(tup,0)))
+    for i in range(1, len(tup)):
+        if tup[i]>=2:
+            res.append(run(update(tup, i)))
+    cached[tup] = res
+    return max(cached[tup])
+
+    
+run((1,3,5,7))
+for k in sorted(cached.keys(), key=lambda v: -sum(v)):
+    print(k, cached[k])

@@ -817,3 +817,12 @@ func ToInt64(v interface{}) (int64, error) {
 		return 0, fmt.Errorf("cannot convert type %s to int64", reflect.TypeOf(v))
 	}
 }
+
+func indexOf[T comparable](arr []T, v T) int {
+	for i := range arr {
+		if arr[i] == v {
+			return i
+		}
+	}
+	return -1
+}

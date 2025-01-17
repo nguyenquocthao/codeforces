@@ -2,7 +2,12 @@ from itertools import permutations, combinations, product
 from collections import defaultdict
 import random
 from math import gcd
-from functools import lru_cache
+from functools import lru_cache, cmp_to_key
+
+# def convert(v):
+#     if v<=3: return str(v)
+#     return convert((v-1)//3) + str((v-1)%3 + 1)
+    
 
 
 # def run(l,r):

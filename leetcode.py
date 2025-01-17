@@ -3,6 +3,7 @@ from typing import List
 from collections import deque, Counter, defaultdict
 from itertools import combinations, product, permutations
 from functools import lru_cache
+import bisect
 
 class RMQ:
     def __init__(self, l):
@@ -503,3 +504,12 @@ def createnode(l):
         node.fix()  # Ensure the node's values are initialized correctly
         return node
     return create(0, len(l) - 1)
+MOD = 10**9 + 7
+@lru_cache(None)
+def fac(v):
+    if v==0: return 1
+    return v * fac(v-1)%MOD
+def mod_inverse(v):
+    return pow(v, MOD-2, MOD)
+def comb(n,k):
+    return fac(n) * mod_inverse(fac(k) * fac(n-k)) % MOD

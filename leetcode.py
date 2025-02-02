@@ -4,6 +4,7 @@ from collections import deque, Counter, defaultdict
 from itertools import combinations, product, permutations
 from functools import lru_cache
 import bisect
+from heapq import nlargest, nsmallest
 
 class RMQ:
     def __init__(self, l):

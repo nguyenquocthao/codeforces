@@ -240,30 +240,145 @@ func Contains[T comparable](l []T, x T) bool {
 	return false
 }
 
-func run(a, b, c, d int) int {
-	if a > c {
-		a, b, c, d = c, d, a, b
+type Stack[T any] struct {
+	data []T
+	i    int
+}
+
+func (s *Stack[T]) Top() T {
+	return s.data[s.i-1]
+}
+
+func (s *Stack[T]) Len() int {
+	return s.i
+}
+
+func (s *Stack[T]) Push(v T) {
+	if s.i == len(s.data) {
+		s.data = append(s.data, v)
+	} else {
+		s.data[s.i] = v
 	}
-	if b < c {
-		return 1
+	s.i += 1
+}
+
+func (s *Stack[T]) Pop() T {
+	s.i -= 1
+	if s.i < 0 {
+		panic("Invalid stack pop: stack is empty")
 	}
-	res := min(b, d) - max(a, c) + 2
-	if b == d {
-		res -= 1
+	return s.data[s.i]
+}
+
+func (s *Stack[T]) ToList() []T {
+	return s.data[:s.i]
+}
+
+func NewStack[T any]() *Stack[T] {
+	return &Stack[T]{data: []T{}, i: 0}
+}
+
+const MOD = 998244353
+
+// const MOD = 1000000007
+const maxn = 1000000
+
+var FAC = make([]int64, maxn+1)
+var IFAC = make([]int64, maxn+1)
+
+func init() {
+	FAC[0], FAC[1] = 1, 1
+	IFAC[0], IFAC[1] = 1, 1
+	for i := int64(2); i < maxn+1; i++ {
+		FAC[i] = (i * FAC[i-1]) % MOD
+		IFAC[i] = mod_inverse(FAC[i])
 	}
-	if a == c {
-		res -= 1
+}
+
+func pow(x, n int64) int64 {
+	x = x % MOD
+	res := int64(1)
+	for n > 0 {
+		if n%2 == 1 {
+			res = (res * x) % MOD
+		}
+		x = (x * x) % MOD
+		n = n / 2
 	}
 	return res
-	// return max(res, 1)
+}
+
+func mod_inverse(x int64) int64 {
+	return pow(x, MOD-2)
+}
+
+func comb(n, k int64) int64 {
+	if n < 0 || k > n {
+		return 0
+	}
+	inv := (IFAC[k] * IFAC[n-k]) % MOD
+	return (FAC[n] * inv) % MOD
+}
+
+func mod[T int | int64](v T) T {
+	res := v % MOD
+	if res < 0 {
+		res += MOD
+	}
+	return res
+}
+
+func Catalan(n int) int64 {
+	// fmt.Println("Catalan", n)
+	return mod(FAC[2*n] * mod(IFAC[n+1]*IFAC[n]))
+}
+
+func iCatalan(n int) int64 {
+	return mod(IFAC[2*n] * mod(FAC[n+1]*FAC[n]))
+}
+
+func run(a []int, k int) int {
+	// stay the same
+	// swap with first
+	n := len(a)
+	k -= 1
+	badi := -1
+	for i, v := range a {
+		if v > a[k] {
+			badi = i
+			break
+		}
+	}
+	if badi < 0 {
+		return n - 1
+	}
+	if badi > k {
+		return badi - 1
+	}
+	// swap with first bad
+	res := 0
+	if badi > 0 {
+		res += 1
+	}
+	val := a[k]
+	a[k], a[badi] = a[badi], a[k]
+	for j := badi + 1; j < n; j++ {
+		if val > a[j] {
+			res += 1
+		} else {
+			break
+		}
+	}
+	return Max(badi-1, res)
+
 }
 
 func main() {
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		x, y := readSliceInt(), readSliceInt()
-		fmt.Println(run(x[0], x[1], y[0], y[1]))
+		l := readSliceInt()
+		fmt.Println(run(readSliceInt(), l[1]))
 
 	}
 }

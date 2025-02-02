@@ -185,120 +185,59 @@ func Keys[K comparable, V any](m map[K]V) []K {
 	return res
 }
 
-const MOD = 998244353
-
-// const MOD = 1000000007
-const maxn = 1000000
-
-// var FAC = make([]int64, maxn+1)
-// var IFAC = make([]int64, maxn+1)
-
-// func init() {
-// 	FAC[0], FAC[1] = 1, 1
-// 	IFAC[0], IFAC[1] = 1, 1
-// 	for i := int64(2); i < maxn+1; i++ {
-// 		FAC[i] = (i * FAC[i-1]) % MOD
-// 		IFAC[i] = mod_inverse(FAC[i])
-// 	}
-// }
-
-func pow(x, n int64) int64 {
-	x = x % MOD
-	res := int64(1)
-	for n > 0 {
-		if n%2 == 1 {
-			res = (res * x) % MOD
-		}
-		x = (x * x) % MOD
-		n = n / 2
-	}
-	return res
-}
-
-func mod_inverse(x int64) int64 {
-	return pow(x, MOD-2)
-}
-
-// func comb(n, k int64) int64 {
-// 	if n < 0 || k > n {
-// 		return 0
-// 	}
-// 	inv := (IFAC[k] * IFAC[n-k]) % MOD
-// 	return (FAC[n] * inv) % MOD
-// }
-
-func mod[T int | int64](v T) T {
-	res := v % MOD
-	if res < 0 {
-		res += MOD
-	}
-	return res
-}
-
-func reverse[T any](l []T) {
-	i, j := 0, len(l)-1
-	for i < j {
-		l[i], l[j] = l[j], l[i]
-		i, j = i+1, j-1
+func IfElse[T any](condition bool, a, b T) T {
+	if condition {
+		return a
+	} else {
+		return b
 	}
 }
 
-// https://codeforces.com/contest/1969/problem/D
-// choose k items => all other items with a[i]<b[i] and b[i]<=min(b among k) is taken
-// => sort b by descending; create a heap to store k items with min a => maxheap to pop a with max value
-
-type Heap []int64
-
-func (h Heap) Len() int           { return len(h) }
-func (h Heap) Less(i, j int) bool { return h[i] > h[j] }
-func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *Heap) Push(x any) {
-	// Push and Pop use pointer receivers because they modify the slice's length,
-	// not just its contents.
-	*h = append(*h, x.(int64))
-}
-
-func (h *Heap) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
-type UnionFind []int
-
-func (u UnionFind) Find(x int) int {
-	if u[x] != x {
-		u[x] = u.Find(u[x])
+func gcd[T int | int64](a, b T) T {
+	for b > 0 {
+		a, b = b, a%b
 	}
-	return u[x]
+	return a
 }
 
-func (u UnionFind) Union(x, y int) {
-	u[u.Find(y)] = u.Find(x)
+func lcm[T int | int64](a, b T) T {
+	return a * (b / gcd(a, b))
 }
 
-func (u UnionFind) NGroup() int {
-	res := 0
-	for i, v := range u {
-		if i == v {
-			res++
+func tol(s string) []int {
+	res := make([]int, len(s))
+	for i, ch := range s {
+		if ch == '1' {
+			res[i] = 1
+		} else {
+			res[i] = 0
 		}
 	}
 	return res
 }
 
-func ListRemove[T comparable](l []T, v T) []T {
-	for i, x := range l {
-		if x == v {
-			l[i], l[len(l)-1] = l[len(l)-1], l[i]
-			return l[:len(l)-1]
+func ToSet[T comparable](l []T) map[T]bool {
+	m := map[T]bool{}
+	for _, v := range l {
+		m[v] = true
+	}
+	return m
+}
+func Map[T, T1 any](l []T, f func(v T) T1) []T1 {
+	res := make([]T1, len(l))
+	for i, v := range l {
+		res[i] = f(v)
+	}
+	return res
+}
+
+func Contains[T comparable](l []T, x T) bool {
+	for _, v := range l {
+		if v == x {
+			return true
 		}
 	}
-	return l
-
+	return false
 }
 
 type Stack[T any] struct {
@@ -339,109 +278,239 @@ func NewStack[T any]() *Stack[T] {
 	return &Stack[T]{data: []T{}, i: 0}
 }
 
-func TarjanInt(graph [][]int) []int {
-	n := len(graph)
-	lowLinks := Repeat(-1, n)
-	onstack := make([]bool, n)
-	stack := NewStack[int]()
+const MOD = 998244353
 
-	globalid := 1
+// const MOD = 1000000007
+const maxn = 200000
 
-	var strongconnect func(int)
-	strongconnect = func(v int) {
-		if lowLinks[v] >= 0 {
-			return
-		}
-		index := globalid
-		globalid += 1
+var FAC = make([]int64, maxn+1)
+var IFAC = make([]int64, maxn+1)
 
-		// index := len(lowLinks)
-		lowLinks[v] = index
-		stack.Push(v)
-		onstack[v] = true
-		for _, w := range graph[v] {
-			strongconnect(w)
-			if onstack[w] {
-				lowLinks[v] = Min(lowLinks[v], lowLinks[w])
-			}
-		}
-		if lowLinks[v] == index {
-			for {
-				w := stack.Pop()
-				onstack[w] = false
-				if w == v {
-					break
-				}
-			}
-		}
+func init() {
+	FAC[0], FAC[1] = 1, 1
+	IFAC[0], IFAC[1] = 1, 1
+	for i := int64(2); i < maxn+1; i++ {
+		FAC[i] = (i * FAC[i-1]) % MOD
+		IFAC[i] = mod_inverse(FAC[i])
 	}
-	for v := 0; v < n; v++ {
-		strongconnect(v)
-	}
-
-	return lowLinks
 }
 
-func GetDAGFromSCSInt(graph [][]int, sccs []int) map[int][]int {
-	n := len(graph)
-	marked, connected := make([]bool, n), map[[2]int]bool{}
-	var dp func(int)
-	dp = func(i int) {
-		if marked[i] {
-			return
+func pow(x, n int64) int64 {
+	x = x % MOD
+	res := int64(1)
+	for n > 0 {
+		if n%2 == 1 {
+			res = (res * x) % MOD
 		}
-		marked[i] = true
-		for _, j := range graph[i] {
-			key := [2]int{sccs[i], sccs[j]}
-			if key[0] != key[1] {
-				connected[key] = true
-			}
-
-			dp(j)
-		}
-	}
-	for i := 0; i < n; i++ {
-		dp(i)
-	}
-	res := map[int][]int{}
-	for pair := range connected {
-		res[pair[0]] = append(res[pair[0]], pair[1])
+		x = (x * x) % MOD
+		n = n / 2
 	}
 	return res
 }
 
-func run(a []int, roads [][]int) int {
-	n := len(a)
-	graph := make([][]int, n)
-	for _, r := range roads {
-		i, j := r[0]-1, r[1]-1
-		graph[i] = append(graph[i], j)
+func mod_inverse(x int64) int64 {
+	return pow(x, MOD-2)
+}
+
+func comb(n, k int64) int64 {
+	if n < 0 || k > n {
+		return 0
 	}
-	tar := TarjanInt(graph)
-	dag := GetDAGFromSCSInt(graph, tar)
-	count := map[int]int{}
-	for i, v := range a {
-		count[tar[i]] += v
+	inv := (IFAC[k] * IFAC[n-k]) % MOD
+	return (FAC[n] * inv) % MOD
+}
+
+func mod[T int | int64](v T) T {
+	res := v % MOD
+	if res < 0 {
+		res += MOD
 	}
-	marked := map[int]bool{}
+	return res
+}
+
+func Catalan(n int) int64 {
+	return mod(FAC[2*n] * mod(IFAC[n+1]*IFAC[n]))
+}
+
+type Heap []int
+
+func (h Heap) Len() int           { return len(h) }
+func (h Heap) Less(i, j int) bool { return h[i] > h[j] }
+func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *Heap) Push(x any) {
+	// Push and Pop use pointer receivers because they modify the slice's length,
+	// not just its contents.
+	*h = append(*h, x.(int))
+}
+
+func (h *Heap) Pop() any {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
+type Deque[T any] struct {
+	Data       []T
+	Start, End int
+}
+
+func (dq *Deque[T]) Len() int {
+	return dq.End - dq.Start
+}
+
+func NewDeque[T any](l []T, capacity int) *Deque[T] {
+	res := &Deque[T]{}
+	if capacity < 2 {
+		capacity = 2
+	}
+	res.Start = 0
+	res.End = len(l)
+	if len(l) >= capacity {
+		res.Data = l
+	} else {
+		res.Data = make([]T, capacity)
+		copy(res.Data, l)
+	}
+	// fmt.Println(res)
+	return res
+}
+
+func (dq *Deque[T]) upgradeFull() {
+	if dq.Len() < len(dq.Data) {
+		return
+	}
+	// fmt.Println("upgrade", dq)
+	data := append(dq.Data[dq.Start:], dq.Data[:dq.Start]...)
+	dq.Start = 0
+	dq.End = len(data)
+	dq.Data = make([]T, 2*len(data)+1)
+	copy(dq.Data, data)
+}
+
+func (dq *Deque[T]) First() T {
+	// fmt.Println(dq)
+	return dq.Data[dq.Start]
+}
+func (dq *Deque[T]) Last() T {
+	// fmt.Println(dq)
+	j := dq.End - 1
+	if j >= len(dq.Data) {
+		j -= len(dq.Data)
+	}
+	return dq.Data[j]
+}
+
+func (dq *Deque[T]) At(i int) T {
+	i += dq.Start
+	if i >= len(dq.Data) {
+		i -= len(dq.Data)
+	}
+	return dq.Data[i]
+}
+
+func (dq *Deque[T]) AppendLeft(v T) {
+	dq.upgradeFull()
+	if dq.Start == 0 {
+		dq.Start, dq.End = dq.Start+len(dq.Data), dq.End+len(dq.Data)
+	}
+	dq.Start -= 1
+	dq.Data[dq.Start] = v
+}
+
+func (dq *Deque[T]) Append(v T) {
+	dq.upgradeFull()
+	j := dq.End
+	if j >= len(dq.Data) {
+		j -= len(dq.Data)
+	}
+	dq.Data[j] = v
+	dq.End += 1
+}
+
+func (dq *Deque[T]) PopLeft() T {
+	res := dq.First()
+	dq.Start += 1
+	if dq.Start == len(dq.Data) {
+		dq.Start, dq.End = dq.Start-len(dq.Data), dq.End-len(dq.Data)
+	}
+	return res
+}
+
+func (dq *Deque[T]) Pop() T {
+	res := dq.Last()
+	dq.End -= 1
+	return res
+}
+
+func (dq Deque[T]) ToList() []T {
+	res := make([]T, dq.Len())
+	for i := range res {
+		res[i] = dq.At(i)
+	}
+	return res
+}
+
+func (dq Deque[T]) String() string {
+	return fmt.Sprint(dq.ToList())
+}
+
+const inf = (int64(1)) << 60
+
+func run(a, b []int, k int) int64 {
+	mb := map[int]int{}
+	mask1 := (1 << 30) - 1
+	mb[mask1] = 0
+	for _, v := range b {
+		keys := Keys(mb)
+		for _, k := range keys {
+			if mb[k&v] == 0 {
+				mb[k&v] = 11
+			}
+			mb[k&v] = min(mb[k&v], mb[k]+1)
+		}
+		mb[v] = 1
+	}
+
+	lm := make([][]int, len(b)+1)
+	for k, v := range mb {
+		lm[v] = append(lm[v], k)
+	}
+	for len(lm[len(lm)-1]) == 0 {
+		lm = lm[:len(lm)-1]
+	}
+
+	makel := func(v int) []int {
+		res := make([]int, len(lm))
+		for i, l := range lm {
+			v2 := v
+			for _, x := range l {
+				v2 = min(v2, v&x)
+			}
+			res[i] = v2
+		}
+		return res
+	}
+
+	unionl := func(a, b []int) []int {
+		res := Repeat(inf, len(a)+len(b)-1)
+	}
+
+	return 0
 
 }
 
 func main() {
+	// for i := 1; i < 11; i++ {
+	// 	fmt.Println(i, Catalan(i-1))
+	// }
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
 		l := readSliceInt()
-		a := readSliceInt()
-		roads := make([][]int, l[1])
-		for i := range roads {
-			roads[i] = readSliceInt()
-		}
-		fmt.Println(run(a, roads))
+		fmt.Println(run(readSliceInt(), readSliceInt(), l[2]))
+
 	}
-	// graph := [][]int{{1}, {2}, {0}, {1, 2, 4}, {3, 6}, {5, 4, 7}, {2, 7}, {6}}
-	// tar := TarjanInt(graph)
-	// fmt.Println(tar)
-	// fmt.Println(GetDAGFromSCSInt(graph, tar))
-	// fmt.Println(TarjanInt(graph))
 }

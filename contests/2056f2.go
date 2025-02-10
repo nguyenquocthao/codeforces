@@ -3,8 +3,8 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math/bits"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -241,49 +241,78 @@ func Contains[T comparable](l []T, x T) bool {
 	return false
 }
 
-type Item struct {
-	V, I, J, Add int
+func stirlingparity(n, k int) bool {
+	x, y := n-divceil(k+1, 2), (k-1)/2
+	return x|y == x
 }
 
-type Heap []Item
-
-func (h Heap) Len() int           { return len(h) }
-func (h Heap) Less(i, j int) bool { return h[i].V > h[j].V }
-func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *Heap) Push(x any) {
-	// Push and Pop use pointer receivers because they modify the slice's length,
-	// not just its contents.
-	*h = append(*h, x.(Item))
+func xorupto(n int) int {
+	return []int{n, 1, n + 1, 0}[n%4]
 }
 
-func (h *Heap) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
-func run(a []int) int {
-	slices.Sort(a)
-	n := len(a)
-	mid := (n - 1) / 2
-	// fmt.Println(a, mid)
-	for i := mid + 1; i < n; i++ {
-		if a[mid] != a[i] {
-			return i - mid
+// simplfied code of
+// def xorif(mask, m):
+// res=0
+// for i in range(1,m+1):
+//
+//	if i|mask==i: res^=i
+//
+// return res
+func xorif(mask, m int) int {
+	if mask > m {
+		return 0
+	}
+	m -= mask
+	bb := []int{}
+	for i := 0; i < bits.Len(uint(m)); i++ {
+		if (1<<i)&mask > 0 {
+			if (1<<i)&m > 0 {
+				m |= (1 << i) - 1
+			}
+		} else {
+			bb = append(bb, i)
 		}
 	}
-	return n - mid
+	count := 0
+	for i, j := range bb {
+		if (1<<j)&m > 0 {
+			count |= 1 << i
+		}
+	}
+	base := IfElse(count%2 == 1, 0, mask)
+	count = xorupto(count)
+	for i, j := range bb {
+		if (1<<i)&count > 0 {
+			base |= 1 << j
+		}
+	}
+	return base
+}
+
+func run(s string, m int) int {
+	n := strings.Count(s, "1")
+	res := 0
+	for p := 1; p <= n; p++ {
+		if !stirlingparity(n, p) {
+			continue
+		}
+		res ^= xorif(p-1, m-1)
+		// for x := 1; x < m; x++ {
+		// 	if x|(p-1) != x {
+		// 		continue
+		// 	}
+		// 	res ^= x
+		// }
+	}
+	return res
 }
 
 func main() {
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		readInt()
-		fmt.Println(run(readSliceInt()))
+		l := readSliceInt()
+		fmt.Println(run(readString(), l[1]))
 
 	}
 }

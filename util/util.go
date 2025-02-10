@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"math/bits"
 	"os"
 	"reflect"
 	"runtime"
@@ -825,4 +826,56 @@ func indexOf[T comparable](arr []T, v T) int {
 		}
 	}
 	return -1
+}
+
+func Catalan(n int64) int64 {
+	return mod(FAC[2*n] * mod(IFAC[n+1]*IFAC[n]))
+}
+
+func stirlingparity(n, k int) bool {
+	x, y := n-divceil(k+1, 2), (k-1)/2
+	return x|y == x
+}
+
+func xorupto(n int) int {
+	return []int{n, 1, n + 1, 0}[n%4]
+}
+
+// simplfied code of
+// def xorif(mask, m):
+// res=0
+// for i in range(1,m+1):
+//
+//	if i|mask==i: res^=i
+//
+// return res
+func xorif(mask, m int) int {
+	if mask > m {
+		return 0
+	}
+	m -= mask
+	bb := []int{}
+	for i := 0; i < bits.Len(uint(m)); i++ {
+		if (1<<i)&mask > 0 {
+			if (1<<i)&m > 0 {
+				m |= (1 << i) - 1
+			}
+		} else {
+			bb = append(bb, i)
+		}
+	}
+	count := 0
+	for i, j := range bb {
+		if (1<<j)&m > 0 {
+			count |= 1 << i
+		}
+	}
+	base := IfElse(count%2 == 1, 0, mask)
+	count = xorupto(count)
+	for i, j := range bb {
+		if (1<<i)&count > 0 {
+			base |= 1 << j
+		}
+	}
+	return base
 }

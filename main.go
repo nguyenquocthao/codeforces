@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -265,25 +264,24 @@ func (h *Heap) Pop() any {
 	return x
 }
 
-func run(a []int) int {
-	slices.Sort(a)
-	n := len(a)
-	mid := (n - 1) / 2
-	// fmt.Println(a, mid)
-	for i := mid + 1; i < n; i++ {
-		if a[mid] != a[i] {
-			return i - mid
+func run(a []int, k int) int {
+	count := make([]int, 101)
+	for _, v := range a {
+		count[v] += 1
+		if count[v] == k {
+			return k - 1
 		}
 	}
-	return n - mid
+	return len(a)
+
 }
 
 func main() {
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		readInt()
-		fmt.Println(run(readSliceInt()))
+		l := readSliceInt()
+		fmt.Println(run(readSliceInt(), l[1]))
 
 	}
 }

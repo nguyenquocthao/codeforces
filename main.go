@@ -240,48 +240,184 @@ func Contains[T comparable](l []T, x T) bool {
 	return false
 }
 
-type Item struct {
-	V, I, J, Add int
-}
+const MOD = 998244353
 
-type Heap []Item
+// const MOD = 1000000007
+const maxn = 2000000
 
-func (h Heap) Len() int           { return len(h) }
-func (h Heap) Less(i, j int) bool { return h[i].V > h[j].V }
-func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+var FAC = make([]int64, maxn+1)
+var IFAC = make([]int64, maxn+1)
 
-func (h *Heap) Push(x any) {
-	// Push and Pop use pointer receivers because they modify the slice's length,
-	// not just its contents.
-	*h = append(*h, x.(Item))
-}
-
-func (h *Heap) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
-func run(a []int, k int) int {
-	count := make([]int, 101)
-	for _, v := range a {
-		count[v] += 1
-		if count[v] == k {
-			return k - 1
-		}
+func init() {
+	FAC[0], FAC[1] = 1, 1
+	IFAC[0], IFAC[1] = 1, 1
+	for i := int64(2); i < maxn+1; i++ {
+		FAC[i] = (i * FAC[i-1]) % MOD
+		IFAC[i] = mod_inverse(FAC[i])
 	}
-	return len(a)
+}
 
+func pow(x, n int64) int64 {
+	x = x % MOD
+	res := int64(1)
+	for n > 0 {
+		if n%2 == 1 {
+			res = (res * x) % MOD
+		}
+		x = (x * x) % MOD
+		n = n / 2
+	}
+	return res
+}
+
+func mod_inverse(x int64) int64 {
+	return pow(x, MOD-2)
+}
+
+func comb(n, k int64) int64 {
+	if n < 0 || k > n {
+		return 0
+	}
+	inv := (IFAC[k] * IFAC[n-k]) % MOD
+	return (FAC[n] * inv) % MOD
+}
+
+func mod[T int | int64](v T) T {
+	res := v % MOD
+	if res < 0 {
+		res += MOD
+	}
+	return res
+}
+
+type Deque[T any] struct {
+	Data       []T
+	Start, End int
+}
+
+func (dq *Deque[T]) Len() int {
+	return dq.End - dq.Start
+}
+
+func NewDeque[T any](l []T, capacity int) *Deque[T] {
+	res := &Deque[T]{}
+	if capacity < 2 {
+		capacity = 2
+	}
+	res.Start = 0
+	res.End = len(l)
+	if len(l) >= capacity {
+		res.Data = l
+	} else {
+		res.Data = make([]T, capacity)
+		copy(res.Data, l)
+	}
+	// fmt.Println(res)
+	return res
+}
+
+func (dq *Deque[T]) upgradeFull() {
+	if dq.Len() < len(dq.Data) {
+		return
+	}
+	// fmt.Println("upgrade", dq)
+	data := append(dq.Data[dq.Start:], dq.Data[:dq.Start]...)
+	dq.Start = 0
+	dq.End = len(data)
+	dq.Data = make([]T, 2*len(data)+1)
+	copy(dq.Data, data)
+}
+
+func (dq *Deque[T]) First() T {
+	// fmt.Println(dq)
+	return dq.Data[dq.Start]
+}
+func (dq *Deque[T]) Last() T {
+	// fmt.Println(dq)
+	j := dq.End - 1
+	if j >= len(dq.Data) {
+		j -= len(dq.Data)
+	}
+	return dq.Data[j]
+}
+
+func (dq *Deque[T]) At(i int) T {
+	i += dq.Start
+	if i >= len(dq.Data) {
+		i -= len(dq.Data)
+	}
+	return dq.Data[i]
+}
+
+func (dq *Deque[T]) AppendLeft(v T) {
+	dq.upgradeFull()
+	if dq.Start == 0 {
+		dq.Start, dq.End = dq.Start+len(dq.Data), dq.End+len(dq.Data)
+	}
+	dq.Start -= 1
+	dq.Data[dq.Start] = v
+}
+
+func (dq *Deque[T]) Append(v T) {
+	dq.upgradeFull()
+	j := dq.End
+	if j >= len(dq.Data) {
+		j -= len(dq.Data)
+	}
+	dq.Data[j] = v
+	dq.End += 1
+}
+
+func (dq *Deque[T]) PopLeft() T {
+	res := dq.First()
+	dq.Start += 1
+	if dq.Start == len(dq.Data) {
+		dq.Start, dq.End = dq.Start-len(dq.Data), dq.End-len(dq.Data)
+	}
+	return res
+}
+
+func (dq *Deque[T]) Pop() T {
+	res := dq.Last()
+	dq.End -= 1
+	return res
+}
+
+func (dq Deque[T]) ToList() []T {
+	res := make([]T, dq.Len())
+	for i := range res {
+		res[i] = dq.At(i)
+	}
+	return res
+}
+
+func (dq Deque[T]) String() string {
+	return fmt.Sprint(dq.ToList())
+}
+
+func cal2(a, b int) int {
+	// b is reduced by a down to 0. sum of b
+	n := b / a
+	return n * (b - a + b - a*n) / 2
+}
+
+func run(n int) {
+	row := makeRange(1, n+1)
+	s := 0
+	for i := 1; i <= n; i++ {
+		s += i * (2*i - 1)
+	}
+	fmt.Println(s, 2*n)
+	for i := n; i > 0; i-- {
+		printSlice(append([]int{1, i}, row...))
+		printSlice(append([]int{2, i}, row...))
+	}
 }
 
 func main() {
 	ntest := readInt()
 	// ntest := 1
 	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt()
-		fmt.Println(run(readSliceInt(), l[1]))
-
+		run(readInt())
 	}
 }

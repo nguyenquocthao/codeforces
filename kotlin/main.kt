@@ -1,6 +1,8 @@
 import java.util.*
 import kotlin.math.*
 import divceil
+// import bitLength64
+
 
 inline fun <reified T> readSlice(): List<T> {
     return readLine()!!.split(" ").map { parseToken<T>(it) }
@@ -38,52 +40,23 @@ val K = 10
 
 fun main() {
     repeat(readInt()){
-        var (k,m) =readSlice<Int>()
-        m%=(3*k)
-        println(max(0, 2*k -m ))
+        readInt()
+        println(run(readSlice<Int>().toIntArray()))
+        // println(KotlinVersion.CURRENT)
 
     }
 
 
 }
 
-class Tree(p: List<Int>, mask:Long){
-    var mparent: Array<Int>
-    var mchild: Array<MutableList<Int>>
-    init{
-        val n = p.size
-        mparent = Array(n){0}; mchild = Array(n){mutableListOf<Int>()}; var mtrue = Array(n){it}
-        fun gettrue(i:Int):Int{
-            if (i==0){
-                return 0
-            }
-            if ((mask shr mtrue[i]) and 1L == 0L){
-                mtrue[i] = gettrue(p[i])
-            }
-            return mtrue[i]
-        }
-        for ((i,v) in p.withIndex()){
-            if (i==0 || (mask shr i) and 1L == 0L){
-                continue
-            }
-            val p = gettrue(v)
-            mparent[i] = p
-            mchild[p].add(i)
+fun run(a:IntArray):Int{
+    if (a[0]!=a[1] && a[0]!=a[2]){
+        return 1
+    }
+    for (i in 0 until a.size){
+        if (a[i]!=a[0]){
+            return i+1
         }
     }
-
-    fun getde(x:Int):Long{
-        var res = 0L
-        for (j in mchild[x]){
-            res = res or (1L shl j) or getde(j)
-        }
-        return res
-    }
-    fun getan(x:Int):Long{
-        var res = (1L shl mparent[x])
-        if (res==1L){
-            return 0L
-        }
-        return res or getan(mparent[x])
-    }
+    throw Exception("not found")
 }

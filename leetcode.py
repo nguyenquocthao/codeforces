@@ -5,6 +5,7 @@ from itertools import combinations, product, permutations
 from functools import lru_cache
 import bisect
 from heapq import nlargest, nsmallest
+import math
 
 class RMQ:
     def __init__(self, l):
@@ -514,3 +515,55 @@ def mod_inverse(v):
     return pow(v, MOD-2, MOD)
 def comb(n,k):
     return fac(n) * mod_inverse(fac(k) * fac(n-k)) % MOD
+
+
+
+class BSearchRange:
+    def __init__(self, l):
+        n = len(l)
+        data = [[] for _ in range(4*n)]
+        def make(ind, lo, hi):
+            if lo==hi:
+                data[ind] = [(l[lo],0,0)]
+            else:
+                mid=(lo+hi)//2
+                data[ind] = BSearchRange.merge(make(2*ind, lo, mid), make(2*ind+1, mid+1,hi))
+            return data[ind]
+        make(1, 0, n-1)
+        self.n = n
+        self.data = data
+    def query(self, i, j, val):
+        index = bisect.bisect_left(self.data[1], val, key=lambda v: v[0])
+        if index >= len(self.data[1]):
+            return math.inf
+        
+        return self._q(1, 0, self.n-1, i, j, index)
+    def _q(self, ind, lo, hi, i, j, listindex):
+        l = self.data[ind]
+        if listindex >= len(l) or hi<i or lo>j:
+            return math.inf
+        if i<=lo and hi<=j: return l[listindex][0]
+        mid=(lo+hi)//2
+        return min(self._q(2*ind, lo,mid, i,j, l[listindex][1]), self._q(2*ind+1, mid+1,hi, i,j,l[listindex][2]))
+
+    @staticmethod
+    def merge(a,b):
+        res,i,j = [],0,0
+        while i<len(a) or j<len(b):
+            if i<len(a) and j<len(b) and a[i][0]==b[j][0]:
+                res.append((a[i][0], i, j))
+                i,j = i+1,j+1
+            elif i<len(a) and (j>=len(b) or a[i][0]<b[j][0]):
+                res.append((a[i][0], i, j))
+                i+=1
+            else:
+                res.append((b[j][0], i, j))
+                j+=1
+        return res
+    
+if __name__=="__main__":
+    l=[0,3,6,9,2,5,8,1,4,7]
+    bs = BSearchRange(l)
+    for i in range(10):
+        for j in range(i,10):
+            print(i,j,5, bs.query(i,j,5))

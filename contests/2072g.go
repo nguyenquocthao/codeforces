@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -270,75 +269,104 @@ func mod[T int | int64](v T) T {
 	return res
 }
 
-func run(info []int, data [][2]int) []int {
-	// fmt.Println(info, data)
-	n := info[0]
-	cur, offsets := info[2]-1, []int{}
-	for _, d := range data {
-		if d[1] == 0 {
-			cur += d[0]
-		} else if d[1] == 1 {
-			cur += n - d[0]
-		} else {
-			cur += d[0]
-			offsets = append(offsets, (2*n-2*d[0])%n)
-		}
-		cur = cur % n
-	}
-	slices.Sort(offsets)
-	marked := make([]bool, n)
-	marked[cur] = true
-	for _, v := range offsets {
-		if v == 0 {
-			continue
-		}
-		tomark := []int{}
-		for i := 0; i < n; i++ {
-			if marked[i] {
-				tomark = append(tomark, (i+v)%n)
-			}
-		}
-		if len(tomark) == n {
-			break
-		}
-		for _, i := range tomark {
-			marked[i] = true
-		}
-	}
-	res := make([]int, 0, n)
-	for i, v := range marked {
-		if v {
-			res = append(res, i+1)
-		}
-	}
+func Sump2(n int64) int64 {
+	// n*(n+1)/2
+	n = mod(n)
+	return mod(mod_inverse(int64(2)) * mod(n*(n+1)))
+}
+
+func Sump3(n int64) int64 {
+	// n*(n+1)*(2*n+1)/6
+	n = mod(n)
+	temp := mod(n * (n + 1))
+	return mod(mod_inverse(int64(6)) * mod(temp*mod(2*n+1)))
+}
+
+func calx(a, b, stepb int64) int64 {
+	// a*b + (a+1)*(b-stepb) + (a+2)*(b-2*stepb)...
+	n := (b / stepb)
+	res := mod((n + 1) * mod(a*b))
+	res = mod(res + mod(Sump2(n)*mod(b-a*stepb)))
+	res = mod(res - mod(stepb*Sump3(n)))
 	return res
 }
 
-func main() {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
-	ntest := readInt()
-	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt()
-		data := make([][2]int, l[1])
-		for i := range data {
-			a, b, v := 0, "", 0
-			fmt.Sscanf(readString(), "%v %v", &a, &b)
-			if b == "0" {
-				v = 0
-			} else if b == "1" {
-				v = 1
-			} else {
-				v = 2
+// var cacheinv = map[[2]int][2]int{}
+
+func calinv(n, p int64) (int64, int64) {
+	if n < p {
+		return n, 1
+	}
+	// key := [2]int{int(n), int(p)}
+	// if v, ok := cacheinv[key]; ok {
+	// 	return int64(v[0]), int64(v[1])
+	// }
+	first := n % p
+	a, b := calinv(n/p, p)
+	a = mod(a + mod(first*pow(p, b)))
+	b += 1
+	// cacheinv[key] = [2]int{int(a), int(b)}
+	return a, b
+}
+
+const THRES = 600
+
+func run(n, k int64) int64 {
+	res := int64(0)
+	hi := min(THRES, k)
+	for p := int64(2); p <= hi; p++ {
+		added, _ := calinv(n, p)
+		res = mod(res + added)
+		// fmt.Println(p, res)
+	}
+	if k <= THRES {
+		return res
+	}
+	if n <= THRES {
+		return mod(res + mod(mod(n)*mod(k-THRES)))
+	}
+
+	p := int64(THRES) + 1
+	for p <= n {
+		// fmt.Println(p-1, res)
+		step, b := n/p, n%p
+		ns := (b / step) + 1
+		added := mod(calx(p, b, step) + mod(ns*step))
+		res = mod(res + added)
+		// fmt.Println(p+ns-1, res)
+		if p+ns > k {
+			k += 1
+			if n/k == step {
+				b = n % k
+				ns = (b / step) + 1
+				added := mod(calx(k, b, step) + mod(ns*step))
+				res = mod(res - added)
 			}
-			data[i] = [2]int{a, v}
+			return res
 		}
-		res := run(l, data)
-		fmt.Println(len(res))
-		printSlice(res)
+		p += ns
+	}
+	return mod(res + mod(mod(n)*mod(k-n)))
+
+}
+
+var debug = false
+
+func main() {
+	// fmt.Println(calx(14, 12, 2))
+	ntest := readInt()
+	// ntest := 1
+	// debug = ntest == 7752
+	for nt := 0; nt < ntest; nt++ {
+		l := readSliceInt64()
+		if nt == 0 && l[0] == 69995 && l[1] == 693110035550211703 {
+			debug = false
+		}
+		if !debug {
+			fmt.Println(run(l[0], l[1]))
+		} else if nt == 1102 {
+			fmt.Println(l)
+		}
 
 	}
 }

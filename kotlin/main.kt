@@ -1,6 +1,8 @@
 import java.util.*
 import kotlin.math.*
+import kotlin.text.trim
 import divceil
+import myPrint
 // import bitLength64
 
 
@@ -40,23 +42,37 @@ val K = 10
 
 fun main() {
     repeat(readInt()){
-        readInt()
-        println(run(readSlice<Int>().toIntArray()))
-        // println(KotlinVersion.CURRENT)
+        var c = readLine()!!.last()
+        println(run(readLine()!!, c))
 
     }
 
 
 }
 
-fun run(a:IntArray):Int{
-    if (a[0]!=a[1] && a[0]!=a[2]){
-        return 1
+fun run(s:String, c: Char):Int{
+    if (c=='g'){
+        return 0
     }
-    for (i in 0 until a.size){
-        if (a[i]!=a[0]){
-            return i+1
+    var res=0
+    var firstg = -1
+    var firstc = -1
+    for ((i,ch) in s.withIndex()){
+        if (ch=='g'){
+            if (firstg<0){
+                firstg = i
+            }
+            if (firstc>=0){
+                res=max(res, i-firstc)
+                firstc = -1
+            }
+        } else if (ch==c && firstc<0){
+            firstc = i
         }
     }
-    throw Exception("not found")
+    if (firstc>=0){
+        res = max(res, firstg + s.length - firstc)
+    }
+    return res
+
 }

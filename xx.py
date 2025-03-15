@@ -1,29 +1,30 @@
 from itertools import permutations, combinations, product
 from collections import defaultdict
 import random
-from math import gcd
+from math import gcd, lcm
 from functools import lru_cache, cmp_to_key
 from typing import List
 
-def divceil(n,k):
-    return (n+k-1)//k
+def run(a,b,c):
+    base = [a,b,c]
+    data=[a,b,c]
+    res=max(base)
+    for _ in range(100):
+        diff = max(data)-min(data)
+        print(data, diff)
+        i = min(range(3), key=lambda ind:data[ind])
+        data[i]+=2*base[i]
+        res = min(res, diff)
+    return res
 
-res = set()
-def dp(arr, i, k):
-    if i<0 or i>=len(arr): return
-    if k==0:
-        if arr[-1]>0:  res.add(tuple(arr))
-        # print(arr)
-        return
-    arr[i]+=1
-    dp(arr[:], i-1, k-1)
-    dp(arr[:], i+1,k-1)
+run(6,10,15)
+        
+        
+    
 
-dp([0,0,0,0,0,0], 0, 13)
-# dp([0,0,0],0,5,True)
-print(len(res))
-for v in sorted(res):
-    print(v)
-    
-    
-# 0 -> 1 -> 2 -> 1 -> 0
+def sumsq(a, step, n):
+    res=0
+    for _ in range(n):
+        res+=a*a
+        a+=step
+    return res

@@ -828,6 +828,10 @@ func indexOf[T comparable](arr []T, v T) int {
 	return -1
 }
 
+func last[T any](a []T) T {
+	return a[len(a)-1]
+}
+
 func Catalan(n int64) int64 {
 	return mod(FAC[2*n] * mod(IFAC[n+1]*IFAC[n]))
 }

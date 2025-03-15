@@ -560,10 +560,73 @@ class BSearchRange:
                 res.append((b[j][0], i, j))
                 j+=1
         return res
+
+class KthSmallestRange:
+    class Node:
+        def __init__(self, lo, hi, left=None, right=None):
+            # print(567, lo, hi, left, right)
+            self.lo, self.hi = lo, hi
+            self.left, self.right = left, right
+            self.s = 0
+            if lo<hi: self.s = left.s + right.s  # Fixes NoneType issue
+        
+        def inc(self, i):
+            if self.lo == self.hi:
+                res =  type(self)(i, i)  # Ensures correct class reference
+                res.s = self.s + 1
+                return res
+            elif self.left and self.left.hi >= i:
+                return type(self)(self.lo, self.hi, self.left.inc(i), self.right)
+            else:
+                return type(self)(self.lo, self.hi, self.left, self.right.inc(i))
+
+    @classmethod
+    def create_node(cls, lo, hi):
+        if lo == hi:
+            return cls.Node(lo, hi, None, None)  # Correct class reference
+        else:
+            mid = (lo + hi) // 2
+            return cls.Node(lo, hi, cls.create_node(lo, mid), cls.create_node(mid + 1, hi))
+
+    @classmethod
+    def _query(cls, nodei: "KthSmallestRange.Node", nodej: "KthSmallestRange.Node", k: int) -> int:
+        if nodei.lo == nodei.hi:
+            return nodei.lo
+        cleft = (nodej.left.s if nodej.left else 0) - (nodei.left.s if nodei.left else 0)
+        if k <= cleft:
+            return cls._query(nodei.left, nodej.left, k)
+        else:
+            return cls._query(nodei.right, nodej.right, k - cleft)
+
+    def __init__(self, l):
+        self.arr = sorted(set(l))
+        rv = {v: i for i, v in enumerate(self.arr)}
+        lnodes = [self.create_node(0, len(rv) - 1)]
+        for v in l:
+            index = rv.get(v)  # Safe lookup
+            if index is not None:
+                lnodes.append(lnodes[-1].inc(index))
+        self.rv = rv
+        self.lnodes = lnodes
+
+    def query_kth(self, i, j, k):
+        if j - i + 1 < k:
+            raise Exception(f"{k}th element exceeds range [{i},{j}]")
+        ind = self._query(self.lnodes[i], self.lnodes[j + 1], k)
+        return self.arr[ind]
+
+    
+            
+        
     
 if __name__=="__main__":
     l=[0,3,6,9,2,5,8,1,4,7]
-    bs = BSearchRange(l)
+    print(l)
+    bs = KthSmallestRange(l)
     for i in range(10):
         for j in range(i,10):
-            print(i,j,5, bs.query(i,j,5))
+            k=(j-i+2)//2
+            xx = sorted(l[i:j+1])
+            v = bs.query_kth(i,j,k)
+            if v!=xx[k-1]: print("wrong", i,j,xx,k,v)
+            # print(i,j,sorted(l[i:j+1]), k, bs.query_kth(i,j,k))

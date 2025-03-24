@@ -8,7 +8,7 @@ package util
 // sum(comb(n,i) * i * (i-1)) == n*(n-1) * 2**(n-2)
 // sum(comb(n,i) * i*i) = n*(n-1)* 2**(n-2) + n*2**(n-1) = n*(n+1) * 2**(n-2)
 
-func ToPolyMod[T int64](f func(int64) int64, p int) func(int64) int64 {
+func ToPolyMod(f func(int64) int64, p int) func(int64) int64 {
 	cal := make([]int64, p+1)
 	for i := 0; i <= p; i++ {
 		cal[i] = f(int64(i))

@@ -883,3 +883,21 @@ func xorif(mask, m int) int {
 	}
 	return base
 }
+
+func gensubmask(v int) []int {
+	res, x := []int{}, v
+	for x > 0 {
+		res = append(res, x)
+		x = (x - 1) & v
+	}
+	res = append(res, 0)
+	return res
+}
+func gensupermask(v, maxv int) []int {
+	res, x := []int{}, v
+	for x < maxv {
+		res = append(res, x)
+		x = (x + 1) | v
+	}
+	return res
+}

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -241,8 +240,22 @@ func Contains[T comparable](l []T, x T) bool {
 	return false
 }
 
-// const MOD = 998244353
-const MOD = 1_000_000_007
+const MOD = 998_244_353
+
+// const MOD = 1_000_000_007
+const maxn = 200_000
+
+var FAC = make([]int64, maxn+1)
+var IFAC = make([]int64, maxn+1)
+
+func init() {
+	FAC[0], FAC[1] = 1, 1
+	IFAC[0], IFAC[1] = 1, 1
+	for i := int64(2); i < maxn+1; i++ {
+		FAC[i] = (i * FAC[i-1]) % MOD
+		IFAC[i] = mod_inverse(FAC[i])
+	}
+}
 
 func pow(x, n int64) int64 {
 	x = x % MOD
@@ -257,9 +270,16 @@ func pow(x, n int64) int64 {
 	return res
 }
 
-func mod_inverse[T int | int64](x T) T {
-	res := pow(int64(x), MOD-2)
-	return T(res)
+func mod_inverse(x int64) int64 {
+	return pow(x, MOD-2)
+}
+
+func comb(n, k int64) int64 {
+	if n < 0 || k > n {
+		return 0
+	}
+	inv := (IFAC[k] * IFAC[n-k]) % MOD
+	return (FAC[n] * inv) % MOD
 }
 
 func mod[T int | int64](v T) T {
@@ -270,48 +290,61 @@ func mod[T int | int64](v T) T {
 	return res
 }
 
-func run(info []int, data [][2]int) []int {
-	// fmt.Println(info, data)
-	n := info[0]
-	cur, offsets := info[2]-1, []int{}
-	for _, d := range data {
-		if d[1] == 0 {
-			cur += d[0]
-		} else if d[1] == 1 {
-			cur += n - d[0]
-		} else {
-			cur += d[0]
-			offsets = append(offsets, (2*n-2*d[0])%n)
-		}
-		cur = cur % n
+type Stack[T any] struct {
+	data []T
+	i    int
+}
+
+func (s *Stack[T]) Top() T {
+	return s.data[s.i-1]
+}
+
+func (s *Stack[T]) Len() int {
+	return s.i
+}
+
+func (s *Stack[T]) Push(v T) {
+	if s.i == len(s.data) {
+		s.data = append(s.data, v)
+	} else {
+		s.data[s.i] = v
 	}
-	slices.Sort(offsets)
-	marked := make([]bool, n)
-	marked[cur] = true
-	for _, v := range offsets {
-		if v == 0 {
-			continue
+	s.i += 1
+}
+
+func (s *Stack[T]) Pop() T {
+	s.i -= 1
+	if s.i < 0 {
+		panic("Invalid stack pop: stack is empty")
+	}
+	return s.data[s.i]
+}
+
+func (s *Stack[T]) ToList() []T {
+	return s.data[:s.i]
+}
+
+func NewStack[T any]() *Stack[T] {
+	return &Stack[T]{data: []T{}, i: 0}
+}
+
+const MAXV int64 = 1 << 60
+
+func run(x, y, k int) int {
+	for {
+		if x == 1 {
+			return 1 + k%(y-1)
 		}
-		tomark := []int{}
-		for i := 0; i < n; i++ {
-			if marked[i] {
-				tomark = append(tomark, (i+v)%n)
-			}
+		if (x / y) == ((x + k) / y) {
+			return x + k
 		}
-		if len(tomark) == n {
-			break
-		}
-		for _, i := range tomark {
-			marked[i] = true
+		x2 := y * ((x / y) + 1)
+		k -= x2 - x
+		x = x2
+		for x%y == 0 {
+			x = x / y
 		}
 	}
-	res := make([]int, 0, n)
-	for i, v := range marked {
-		if v {
-			res = append(res, i+1)
-		}
-	}
-	return res
 }
 
 func main() {
@@ -323,22 +356,6 @@ func main() {
 	ntest := readInt()
 	for nt := 0; nt < ntest; nt++ {
 		l := readSliceInt()
-		data := make([][2]int, l[1])
-		for i := range data {
-			a, b, v := 0, "", 0
-			fmt.Sscanf(readString(), "%v %v", &a, &b)
-			if b == "0" {
-				v = 0
-			} else if b == "1" {
-				v = 1
-			} else {
-				v = 2
-			}
-			data[i] = [2]int{a, v}
-		}
-		res := run(l, data)
-		fmt.Println(len(res))
-		printSlice(res)
-
+		fmt.Println(run(l[0], l[1], l[2]))
 	}
 }

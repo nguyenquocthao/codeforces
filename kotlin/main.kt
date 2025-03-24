@@ -42,37 +42,37 @@ val K = 10
 
 fun main() {
     repeat(readInt()){
-        var c = readLine()!!.last()
-        println(run(readLine()!!, c))
+        var (n,k) = readSlice<Int>()
+        myPrint(*run(n,k).toTypedArray())
 
     }
 
 
 }
 
-fun run(s:String, c: Char):Int{
-    if (c=='g'){
-        return 0
-    }
-    var res=0
-    var firstg = -1
-    var firstc = -1
-    for ((i,ch) in s.withIndex()){
-        if (ch=='g'){
-            if (firstg<0){
-                firstg = i
-            }
-            if (firstc>=0){
-                res=max(res, i-firstc)
-                firstc = -1
-            }
-        } else if (ch==c && firstc<0){
-            firstc = i
+fun run(n:Int, k:Int): IntArray{
+    fun dp(start:Int, k2:Int):IntArray{
+        if (k2==0 || start==n){
+            return intArrayOf(-1)
         }
+        if (k2==1){
+            return (start..n).toList().toIntArray()
+        }
+        var nele = n-start+1
+        var start2 = start + (nele/2)
+        var x = dp(start2, k2-1)
+        if (x[0]==-1){
+            return x
+        }
+        var y = (start..(start2-1)).toList().toIntArray()
+        var l = mutableListOf<Int>()
+        for ((i,v) in x.withIndex()){
+            l.add(v)
+            if (i<y.size){
+                l.add(y[i])
+            }
+        }
+        return l.toIntArray()
     }
-    if (firstc>=0){
-        res = max(res, firstg + s.length - firstc)
-    }
-    return res
-
+    return dp(1, k)
 }

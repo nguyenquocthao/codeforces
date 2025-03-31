@@ -371,6 +371,10 @@ class Manacher:
         print(a, data)
         def query(i,j):
             return data[i+j+1]>j-i+1
+        def maxpalin():
+            i = max(range(len(data)), key=lambda j: data[j])
+            x,y = (i-data[i]+1)//2, (i+data[i]-1)//2
+            return s[x:y]
         self.query=query
 
 

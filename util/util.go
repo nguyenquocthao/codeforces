@@ -901,3 +901,9 @@ func gensupermask(v, maxv int) []int {
 	}
 	return res
 }
+
+func nbitat(x int64, i int) int64 {
+	p := int64(1) << i
+	a, b := x/(2*p), x%(2*p)
+	return a*p + max(0, b-p+1)
+}

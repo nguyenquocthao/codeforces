@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -325,30 +326,199 @@ func mod[T int | int64](v T) T {
 // 	return res
 // }
 
-//	type Item struct {
-//		Start, End int
-//	}
+// type Item struct {
+// 	Start, End int
+// }
+// type Heap []Item
 
-func run(n, k int64) int64 {
-	if k == 1 {
-		return n % MOD
+// func (h Heap) Len() int           { return len(h) }
+// func (h Heap) Less(i, j int) bool { return (h[i].End - h[i].Start) < (h[j].End - h[j].Start) }
+// func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+// func (h *Heap) Push(x any) {
+// 	// Push and Pop use pointer receivers because they modify the slice's length,
+// 	// not just its contents.
+// 	*h = append(*h, x.(Item))
+// }
+
+// func (h *Heap) Pop() any {
+// 	old := *h
+// 	n := len(old)
+// 	x := old[n-1]
+// 	*h = old[0 : n-1]
+// 	return x
+// }
+
+type Stack[T any] struct {
+	data []T
+	i    int
+}
+
+func (s *Stack[T]) Top() T {
+	return s.data[s.i-1]
+}
+
+func (s *Stack[T]) Len() int {
+	return s.i
+}
+
+func (s *Stack[T]) Push(v T) {
+	if s.i == len(s.data) {
+		s.data = append(s.data, v)
+	} else {
+		s.data[s.i] = v
 	}
-	x, y, count := int64(1), int64(1), int64(2)
-	for y%k > 0 {
-		x, y, count = y, (x+y)%k, count+1
+	s.i += 1
+}
+
+func (s *Stack[T]) Pop() T {
+	s.i -= 1
+	if s.i < 0 {
+		panic("Invalid stack pop: stack is empty")
 	}
-	return mod(count * mod(n))
+	return s.data[s.i]
+}
+
+func (s *Stack[T]) ToList() []T {
+	return s.data[:s.i]
+}
+
+func NewStack[T any]() *Stack[T] {
+	return &Stack[T]{data: []T{}, i: 0}
+}
+
+type Item struct {
+	A0, A1, B0, B1 int
+}
+
+type Node struct {
+	Lo, Hi      int
+	Left, Right *Node
+	Lazy, Maxv  int
+}
+
+func (node *Node) Fix() {
+	if node.Left != nil {
+		node.Maxv = node.Lazy + max(node.Left.Maxv, node.Right.Maxv)
+	}
+}
+
+func (node *Node) Flush() {
+	if node.Left != nil {
+		node.Left.Lazy += node.Lazy
+		node.Left.Maxv += node.Lazy
+		node.Right.Lazy += node.Lazy
+		node.Right.Maxv += node.Lazy
+	}
+	node.Lazy = 0
+}
+
+func createnode(lo, hi int) *Node {
+	if lo == hi {
+		return &Node{lo, hi, nil, nil, 0, 0}
+	}
+	mid := (lo + hi) / 2
+	return &Node{lo, hi, createnode(lo, mid), createnode(mid+1, hi), 0, 0}
+}
+
+func (node *Node) Update(l, r, v int) {
+	if node.Hi < l || node.Lo > r {
+		return
+	}
+	if l <= node.Lo && node.Hi <= r {
+		node.Maxv += v
+		node.Lazy += v
+		return
+	}
+	node.Flush()
+	node.Left.Update(l, r, v)
+	node.Right.Update(l, r, v)
+	node.Fix()
+
+}
+
+func run(arr []int) int {
+	n := len(arr)
+	noninc := true
+	for i := 1; i < n; i++ {
+		if arr[i-1] < arr[i] {
+			noninc = false
+			break
+		}
+	}
+	if noninc {
+		return 1
+	}
+	spre, ssuf := NewStack[int](), NewStack[int]()
+	spre.Push(0)
+	for i, v := range arr {
+		if arr[spre.Top()] > v {
+			spre.Push(i)
+		}
+		for ssuf.Len() > 0 && arr[ssuf.Top()] <= v {
+			ssuf.Pop()
+		}
+		ssuf.Push(i)
+	}
+	pre, suf := spre.ToList(), ssuf.ToList()
+	items := make([]Item, n)
+	ai, bi := -1, 0
+	for i := 0; i < n; i++ {
+		if suf[bi] == i {
+			bi += 1
+		}
+		if ai+1 < len(pre) && pre[ai+1] < i {
+			ai += 1
+		}
+		items[i].A1 = ai
+		items[i].B0 = bi
+	}
+	indexes := makeRange(0, n)
+	slices.SortFunc(indexes, func(i, j int) int {
+		return arr[i] - arr[j]
+	})
+	slices.Reverse(indexes)
+	ai, bi = 0, -1
+	for _, i := range indexes {
+		v := arr[i]
+		// v decreasing
+		if ai < len(pre) && arr[pre[ai]] == v {
+			ai += 1
+		}
+		if bi+1 < len(suf) && arr[suf[bi+1]] > v {
+			bi += 1
+		}
+		items[i].A0 = ai
+		items[i].B1 = bi
+	}
+	// fmt.Println(pre, suf)
+	// fmt.Println(items)
+
+	acc := make([][]Item, len(suf)+1)
+	for _, it := range items {
+		if it.A0 > it.A1 || it.B0 > it.B1 {
+			continue
+		}
+		acc[it.B0] = append(acc[it.B0], Item{A0: it.A0, A1: it.A1, B0: 1})
+		acc[it.B1+1] = append(acc[it.B1+1], Item{A0: it.A0, A1: it.A1, B0: -1})
+	}
+	// fmt.Println(acc)
+	node := createnode(0, len(pre)+1)
+	res := 0
+	for _, l := range acc {
+		for _, it := range l {
+			node.Update(it.A0, it.A1, it.B0)
+		}
+		res = max(res, node.Maxv)
+	}
+
+	return res + 2
 
 }
 
 var debug = false
 
 func main() {
-	// for i := 0; i < 60; i++ {
-	// 	for j := i; j < 60; j++ {
-	// 		fmt.Println(i, j, dp(i, j))
-	// 	}
-	// }
 	defer func() {
 		if r := recover(); r != nil {
 			// fmt.Println(data)
@@ -368,7 +538,7 @@ func main() {
 	ntest := readInt()
 	// debug = ntest == 10000
 	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt64()
-		fmt.Println(run(l[0], l[1]))
+		readInt()
+		fmt.Println(run(readSliceInt()))
 	}
 }

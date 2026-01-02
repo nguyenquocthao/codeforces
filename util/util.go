@@ -682,42 +682,6 @@ func Contains[T comparable](l []T, x T) bool {
 	return false
 }
 
-func nextPermutation(nums []int) bool {
-	// Step 1: Find the pivot (rightmost index `i` where nums[i] < nums[i+1])
-	i := len(nums) - 2
-	for i >= 0 && nums[i] >= nums[i+1] {
-		i--
-	}
-
-	// If no pivot is found, the array is in descending order
-	if i < 0 {
-		return false
-	}
-
-	// Step 2: Find the rightmost element `j` where nums[j] > nums[i]
-	j := len(nums) - 1
-	for nums[j] <= nums[i] {
-		j--
-	}
-
-	// Step 3: Swap nums[i] and nums[j]
-	nums[i], nums[j] = nums[j], nums[i]
-
-	// Step 4: Reverse the suffix starting at nums[i+1]
-	reverse2(nums, i+1)
-
-	return true
-}
-
-func reverse2(nums []int, start int) {
-	end := len(nums) - 1
-	for start < end {
-		nums[start], nums[end] = nums[end], nums[start]
-		start++
-		end--
-	}
-}
-
 func ListRemove[T comparable](l []T, v T) []T {
 	for i, x := range l {
 		if x == v {
@@ -906,4 +870,95 @@ func nbitat(x int64, i int) int64 {
 	p := int64(1) << i
 	a, b := x/(2*p), x%(2*p)
 	return a*p + max(0, b-p+1)
+}
+
+func nextPermutation(nums []int) bool {
+	// Step 1: Find the pivot (rightmost index `i` where nums[i] < nums[i+1])
+	i := len(nums) - 2
+	for i >= 0 && nums[i] >= nums[i+1] {
+		i--
+	}
+
+	// If no pivot is found, the array is in descending order
+	if i < 0 {
+		return false
+	}
+
+	// Step 2: Find the rightmost element `j` where nums[j] > nums[i]
+	j := len(nums) - 1
+	for nums[j] <= nums[i] {
+		j--
+	}
+
+	// Step 3: Swap nums[i] and nums[j]
+	nums[i], nums[j] = nums[j], nums[i]
+
+	// Step 4: Reverse the suffix starting at nums[i+1]
+	reverse2(nums, i+1)
+
+	return true
+}
+
+func reverse2(nums []int, start int) {
+	end := len(nums) - 1
+	for start < end {
+		nums[start], nums[end] = nums[end], nums[start]
+		start++
+		end--
+	}
+}
+
+func permutation[T any](l []T) [][]T {
+	n := len(l)
+	indexes := makeRange(0, n)
+	res := [][]T{}
+	for {
+		x := make([]T, n)
+		for i, v := range indexes {
+			x[i] = l[v]
+		}
+		res = append(res, x)
+
+		ok := nextPermutation(indexes)
+		if !ok {
+			break
+		}
+	}
+	return res
+}
+
+func sumcap(a, b, hi int) int {
+	a = max(a, 0)
+	if b <= 0 {
+		return 0
+	}
+	if hi <= a {
+		return hi * (b - a + 1)
+	} else if hi <= b {
+		return (hi-a+1)*(hi+a)/2 + hi*(b-hi)
+	} else {
+		return (b - a + 1) * (b + a) / 2
+	}
+}
+
+func cal(x, y, mid int) int {
+	// a<=x, b<=y, a+b<=mid
+
+	// a from x to 0
+	return sumcap(mid-x+1, mid+1, y+1)
+	// if x+y <= mid {
+	// 	return (x + 1) * (y + 1)
+	// }
+	// if mid <= x && mid <= y {
+	// 	return (mid + 1) * (mid + 2) / 2
+	// }
+
+	// res := 0
+	// for i := 0; i <= x; i++ {
+	// 	if i > mid {
+	// 		break
+	// 	}
+	// 	res += min(y, mid-i) + 1
+	// }
+	// return res
 }

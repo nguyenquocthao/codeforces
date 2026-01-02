@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -240,60 +241,23 @@ func Contains[T comparable](l []T, x T) bool {
 	return false
 }
 
-type Stack[T any] struct {
-	data []T
-	i    int
-}
+// const MOD = 998_244_353
 
-func (s *Stack[T]) Top() T {
-	return s.data[s.i-1]
-}
+const MOD = 1_000_000_007
 
-func (s *Stack[T]) Len() int {
-	return s.i
-}
+// const maxn = 200_000
 
-func (s *Stack[T]) Push(v T) {
-	if s.i == len(s.data) {
-		s.data = append(s.data, v)
-	} else {
-		s.data[s.i] = v
-	}
-	s.i += 1
-}
+// var FAC = make([]int64, maxn+1)
+// var IFAC = make([]int64, maxn+1)
 
-func (s *Stack[T]) Pop() T {
-	s.i -= 1
-	if s.i < 0 {
-		panic("Invalid stack pop: stack is empty")
-	}
-	return s.data[s.i]
-}
-
-func (s *Stack[T]) ToList() []T {
-	return s.data[:s.i]
-}
-
-func NewStack[T any]() *Stack[T] {
-	return &Stack[T]{data: []T{}, i: 0}
-}
-
-const MOD = 998244353
-
-// const MOD = 1000000007
-const maxn = 200000
-
-var FAC = make([]int64, maxn+1)
-var IFAC = make([]int64, maxn+1)
-
-func init() {
-	FAC[0], FAC[1] = 1, 1
-	IFAC[0], IFAC[1] = 1, 1
-	for i := int64(2); i < maxn+1; i++ {
-		FAC[i] = (i * FAC[i-1]) % MOD
-		IFAC[i] = mod_inverse(FAC[i])
-	}
-}
+// func init() {
+// 	FAC[0], FAC[1] = 1, 1
+// 	IFAC[0], IFAC[1] = 1, 1
+// 	for i := int64(2); i < maxn+1; i++ {
+// 		FAC[i] = (i * FAC[i-1]) % MOD
+// 		IFAC[i] = mod_inverse(FAC[i])
+// 	}
+// }
 
 func pow(x, n int64) int64 {
 	x = x % MOD
@@ -312,13 +276,13 @@ func mod_inverse(x int64) int64 {
 	return pow(x, MOD-2)
 }
 
-func comb(n, k int64) int64 {
-	if n < 0 || k > n {
-		return 0
-	}
-	inv := (IFAC[k] * IFAC[n-k]) % MOD
-	return (FAC[n] * inv) % MOD
-}
+// func comb(n, k int64) int64 {
+// 	if n < 0 || k > n {
+// 		return 0
+// 	}
+// 	inv := (IFAC[k] * IFAC[n-k]) % MOD
+// 	return (FAC[n] * inv) % MOD
+// }
 
 func mod[T int | int64](v T) T {
 	res := v % MOD
@@ -328,189 +292,32 @@ func mod[T int | int64](v T) T {
 	return res
 }
 
-func Catalan(n int) int64 {
-	return mod(FAC[2*n] * mod(IFAC[n+1]*IFAC[n]))
+func run(n, m, k int) int {
+	k = divceil(k, n)
+	// x => nempty = m//(x+1) <= m-k. Find mind x
+	return divceil(m+1, m-k+1) - 1
 }
 
-type Heap []int
-
-func (h Heap) Len() int           { return len(h) }
-func (h Heap) Less(i, j int) bool { return h[i] > h[j] }
-func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *Heap) Push(x any) {
-	// Push and Pop use pointer receivers because they modify the slice's length,
-	// not just its contents.
-	*h = append(*h, x.(int))
-}
-
-func (h *Heap) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
-type Deque[T any] struct {
-	Data       []T
-	Start, End int
-}
-
-func (dq *Deque[T]) Len() int {
-	return dq.End - dq.Start
-}
-
-func NewDeque[T any](l []T, capacity int) *Deque[T] {
-	res := &Deque[T]{}
-	if capacity < 2 {
-		capacity = 2
-	}
-	res.Start = 0
-	res.End = len(l)
-	if len(l) >= capacity {
-		res.Data = l
-	} else {
-		res.Data = make([]T, capacity)
-		copy(res.Data, l)
-	}
-	// fmt.Println(res)
-	return res
-}
-
-func (dq *Deque[T]) upgradeFull() {
-	if dq.Len() < len(dq.Data) {
-		return
-	}
-	// fmt.Println("upgrade", dq)
-	data := append(dq.Data[dq.Start:], dq.Data[:dq.Start]...)
-	dq.Start = 0
-	dq.End = len(data)
-	dq.Data = make([]T, 2*len(data)+1)
-	copy(dq.Data, data)
-}
-
-func (dq *Deque[T]) First() T {
-	// fmt.Println(dq)
-	return dq.Data[dq.Start]
-}
-func (dq *Deque[T]) Last() T {
-	// fmt.Println(dq)
-	j := dq.End - 1
-	if j >= len(dq.Data) {
-		j -= len(dq.Data)
-	}
-	return dq.Data[j]
-}
-
-func (dq *Deque[T]) At(i int) T {
-	i += dq.Start
-	if i >= len(dq.Data) {
-		i -= len(dq.Data)
-	}
-	return dq.Data[i]
-}
-
-func (dq *Deque[T]) AppendLeft(v T) {
-	dq.upgradeFull()
-	if dq.Start == 0 {
-		dq.Start, dq.End = dq.Start+len(dq.Data), dq.End+len(dq.Data)
-	}
-	dq.Start -= 1
-	dq.Data[dq.Start] = v
-}
-
-func (dq *Deque[T]) Append(v T) {
-	dq.upgradeFull()
-	j := dq.End
-	if j >= len(dq.Data) {
-		j -= len(dq.Data)
-	}
-	dq.Data[j] = v
-	dq.End += 1
-}
-
-func (dq *Deque[T]) PopLeft() T {
-	res := dq.First()
-	dq.Start += 1
-	if dq.Start == len(dq.Data) {
-		dq.Start, dq.End = dq.Start-len(dq.Data), dq.End-len(dq.Data)
-	}
-	return res
-}
-
-func (dq *Deque[T]) Pop() T {
-	res := dq.Last()
-	dq.End -= 1
-	return res
-}
-
-func (dq Deque[T]) ToList() []T {
-	res := make([]T, dq.Len())
-	for i := range res {
-		res[i] = dq.At(i)
-	}
-	return res
-}
-
-func (dq Deque[T]) String() string {
-	return fmt.Sprint(dq.ToList())
-}
-
-const inf = (int64(1)) << 60
-
-func run(a, b []int, k int) int64 {
-	mb := map[int]int{}
-	mask1 := (1 << 30) - 1
-	mb[mask1] = 0
-	for _, v := range b {
-		keys := Keys(mb)
-		for _, k := range keys {
-			if mb[k&v] == 0 {
-				mb[k&v] = 11
-			}
-			mb[k&v] = min(mb[k&v], mb[k]+1)
-		}
-		mb[v] = 1
-	}
-
-	lm := make([][]int, len(b)+1)
-	for k, v := range mb {
-		lm[v] = append(lm[v], k)
-	}
-	for len(lm[len(lm)-1]) == 0 {
-		lm = lm[:len(lm)-1]
-	}
-
-	makel := func(v int) []int {
-		res := make([]int, len(lm))
-		for i, l := range lm {
-			v2 := v
-			for _, x := range l {
-				v2 = min(v2, v&x)
-			}
-			res[i] = v2
-		}
-		return res
-	}
-
-	unionl := func(a, b []int) []int {
-		res := Repeat(inf, len(a)+len(b)-1)
-	}
-
-	return 0
-
-}
+var debug = false
 
 func main() {
-	// for i := 1; i < 11; i++ {
-	// 	fmt.Println(i, Catalan(i-1))
-	// }
+	defer func() {
+		if r := recover(); r != nil {
+			// fmt.Println(data)
+
+			buf := make([]byte, 1024)
+			n := runtime.Stack(buf, false)
+			// fmt.Println("Panic recovered:", r)
+
+			fmt.Println(strings.ReplaceAll(string(buf[:n]), "\n", " "))
+		}
+	}()
 	ntest := readInt()
-	// ntest := 1
+	// debug = ntest == 10000
 	for nt := 0; nt < ntest; nt++ {
 		l := readSliceInt()
-		fmt.Println(run(readSliceInt(), readSliceInt(), l[2]))
-
+		fmt.Println(run(l[0], l[1], l[2]))
+		// printSlice(run(readInt()))
+		// fmt.Println(run(readSliceInt()[1], readSliceInt()))
 	}
 }

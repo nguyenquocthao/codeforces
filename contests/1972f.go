@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 )
@@ -116,17 +117,17 @@ func reverseStr(s string) string {
 	return string(rns)
 }
 
-func Unique[T comparable](l []T) []T {
-	m := map[T]bool{}
-	for _, v := range l {
-		m[v] = true
-	}
-	res := make([]T, 0, len(l))
-	for v := range m {
-		res = append(res, v)
-	}
-	return res
-}
+// func Unique[T comparable](l []T) []T {
+// 	m := map[T]bool{}
+// 	for _, v := range l {
+// 		m[v] = true
+// 	}
+// 	res := make([]T, 0, len(l))
+// 	for v := range m {
+// 		res = append(res, v)
+// 	}
+// 	return res
+// }
 
 func divceil[T int | int64](a, b T) T {
 	res := a / b
@@ -278,139 +279,125 @@ func NewStack[T any]() *Stack[T] {
 	return &Stack[T]{data: []T{}, i: 0}
 }
 
-const MOD = 998244353
+const MAXV = int64(1) << 60
 
-// const MOD = 1000000007
-const maxn = 200000
-
-var FAC = make([]int64, maxn+1)
-var IFAC = make([]int64, maxn+1)
-
-func init() {
-	FAC[0], FAC[1] = 1, 1
-	IFAC[0], IFAC[1] = 1, 1
-	for i := int64(2); i < maxn+1; i++ {
-		FAC[i] = (i * FAC[i-1]) % MOD
-		IFAC[i] = mod_inverse(FAC[i])
-	}
-}
-
-func pow(x, n int64) int64 {
-	x = x % MOD
-	res := int64(1)
-	for n > 0 {
-		if n%2 == 1 {
-			res = (res * x) % MOD
+func processFunctionalGraph(a []int) func(int, int) int {
+	n := len(a)
+	root := Repeat(-1, n)
+	var getroot func(i int) int
+	getroot = func(i int) int {
+		if root[i] < 0 {
+			root[i] = i
+			root[i] = getroot(a[i])
 		}
-		x = (x * x) % MOD
-		n = n / 2
+		return root[i]
 	}
-	return res
-}
-
-func mod_inverse(x int64) int64 {
-	return pow(x, MOD-2)
-}
-
-func comb(n, k int64) int64 {
-	if n < 0 || k > n {
-		return 0
-	}
-	inv := (IFAC[k] * IFAC[n-k]) % MOD
-	return (FAC[n] * inv) % MOD
-}
-
-func mod[T int | int64](v T) T {
-	res := v % MOD
-	if res < 0 {
-		res += MOD
-	}
-	return res
-}
-
-func Catalan(n int) int64 {
-	return mod(FAC[2*n] * mod(IFAC[n+1]*IFAC[n]))
-}
-
-type Heap []int
-
-func (h Heap) Len() int           { return len(h) }
-func (h Heap) Less(i, j int) bool { return h[i] > h[j] }
-func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *Heap) Push(x any) {
-	// Push and Pop use pointer receivers because they modify the slice's length,
-	// not just its contents.
-	*h = append(*h, x.(int))
-}
-
-func (h *Heap) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
-type Info struct {
-	Ch byte
-	N  int
-}
-
-func run(s, t string) int {
-	n := len(s)
-	if strings.Count(s, "1") != strings.Count(t, "1") {
-		return -1
-	}
-	makeInfo := func(s string) *Stack[*Info] {
-		res, start := NewStack[*Info](), 0
-		for i, ch := range s {
-			if byte(ch) != s[start] {
-				res.Push(&Info{s[start], i - start})
-				start = i
-			}
+	mchild := make([][]int, n)
+	for i, j := range a {
+		if i == getroot(i) {
+			continue
 		}
-		res.Push(&Info{s[start], n - start})
-		return res
+		mchild[j] = append(mchild[j], i)
 	}
-	sts, stt := makeInfo(s), makeInfo(t)
-	// fmt.Println(x, y)
-	res := 0
-	for sts.Len() > 0 {
-		if sts.Top().Ch == stt.Top().Ch {
-			x, y := sts.Pop(), stt.Pop()
-			if x.N > y.N {
-				return -1
-			}
-			y.N -= x.N
-			if y.N > 0 {
-				stt.Push(y)
-			}
+	depth, size, order := make([]int, n), make([]int, n), make([]int, n)
+	curorder := 0
+	var dp func(i int)
+	dp = func(i int) {
+		size[i] = 1
+		order[i] = curorder
+		curorder += 1
+		for _, j := range mchild[i] {
+			depth[j] = depth[i] + 1
+			dp(j)
+			size[i] += size[j]
+		}
+	}
+	for i := 0; i < n; i++ {
+		if i == getroot(i) {
+			dp(i)
+		}
+	}
+	isChildOf := func(x, y int) bool {
+		return order[x] >= order[y] && order[x] < order[y]+size[y]
+	}
+	dist := func(x, y int) int {
+		if getroot(x) != getroot(y) {
+			return n
+		}
+		r := getroot(x)
+		if isChildOf(x, y) {
+			return depth[x] - depth[y]
+		} else if isChildOf(a[r], y) {
+			// x->r->a[r]->y
+			return depth[x] + 1 + depth[a[r]] - depth[y]
 		} else {
-			res += 1
-			x := sts.Pop()
-			y := sts.Pop()
-			if sts.Len() == 0 {
-				sts.Push(x)
-			} else {
-				sts.Top().N += x.N
+			return n
+		}
+	}
+	return dist
+}
+
+func run(a, b []int) int {
+	n := len(b)
+	b = append([]int{0}, b...)
+	dist := processFunctionalGraph(b)
+	// for i := 1; i <= n; i++ {
+	// 	for j := 1; j <= n; j++ {
+	// 		fmt.Println(i, j, dist(i, j))
+	// 	}
+	// }
+	feasible := func(ntrick int) bool {
+		cur := 1
+		for _, v := range a {
+			for cur <= n && dist(v, cur) > ntrick {
+				cur += 1
 			}
-			sts.Push(y)
+			if cur > n {
+				return false
+			}
+		}
+		return true
+	}
+	res, l, r := -1, 0, n-1
+	for l <= r {
+		mid := (l + r) / 2
+		if feasible(mid) {
+			res, r = mid, mid-1
+		} else {
+			l = mid + 1
 		}
 	}
 	return res
-
 }
 
 func main() {
-	// for i := 1; i < 11; i++ {
-	// 	fmt.Println(i, Catalan(i-1))
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+			debug.PrintStack()
+			// fmt.Println(data)
+
+			// buf := make([]byte, 1024)
+			// n := runtime.Stack(buf, false)
+			// fmt.Println("Panic recovered:", r)
+			// runtime.Stack()
+			// fmt.Println(strings.ReplaceAll(string(buf[:n]), "\n", " "))
+		}
+	}()
+	// fmt.Println(permutation([]int{0, 1, 2}))
+	// ntest := 1
+	// run(1073741824)
+	// for i := 0; i < 100; i++ {
+	// 	var x int = 1 << i
+	// 	fmt.Println(i, x)
 	// }
 	ntest := readInt()
 	// ntest := 1
-	for nt := 0; nt < ntest; nt++ {
-		// readInt()
-		fmt.Println(run(readString(), readString()))
 
+	// debug = ntest == 10000
+	for nt := 0; nt < ntest; nt++ {
+		readSliceInt()
+		fmt.Println(run(readSliceInt(), readSliceInt()))
 	}
 }

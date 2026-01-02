@@ -29,14 +29,17 @@ class RMQ:
 class LCA:
     def __init__(self, mchild):
         order,depth=[],[]
-        def dp(i,d):
+        def dp(i,prev,d):
             order.append(i)
             depth.append(d)
             for j in mchild[i]:
-                dp(j,d+1)
+                if isinstance(j, (list, tuple)):
+                    j = j[0]
+                if j==prev: continue                
+                dp(j,i,d+1)
                 order.append(i)
                 depth.append(d)
-        dp(0,0)
+        dp(0,0,0)
         rvindex=[-1]*len(mchild)
         for i,node in enumerate(order): rvindex[node]=i
         if len(order)<16:
@@ -77,30 +80,6 @@ class LCA:
                 indexes.append(bquery(bk, 0, bsize-1))
             return getmin(*indexes)
         self.query=query
-
-class Trie:
-    def __init__(self):
-        self.c=defaultdict(Trie)
-        self.i = 0
-        self.end=False
-        self.prev=None
-    def add(self, w):
-        cur=self
-        for i,ch in enumerate(w):
-            cur=cur.c[ch]
-            cur.i=i+1
-        cur.end=True
-    def next(self, ch):
-        if ch in self.c: return self.c[ch]
-        if not self.prev: return self
-        return self.prev.next(ch)
-    def aho_corasick(self):
-        dq=deque([(self, y) for y in self.c.values()])
-        while dq:
-            x,y = dq.popleft()
-            y.prev=x
-            for ch in y.c:
-                dq.append((x.next(ch), y.c[ch]))
 
 def sort_cyclic_shifts(s):
     n = len(s)
@@ -355,6 +334,31 @@ class Solution:
                 start+=1
         return res
 
+
+
+class Trie:
+    def __init__(self):
+        self.c=defaultdict(Trie)
+        self.i = 0
+        self.end=False
+        self.prev=None
+    def add(self, w):
+        cur=self
+        for i,ch in enumerate(w):
+            cur=cur.c[ch]
+            cur.i=i+1
+        cur.end=True
+    def next(self, ch):
+        if ch in self.c: return self.c[ch]
+        if not self.prev: return self
+        return self.prev.next(ch)
+    def aho_corasick(self):
+        dq=deque([(self, y) for y in self.c.values()])
+        while dq:
+            x,y = dq.popleft()
+            y.prev=x
+            for ch in y.c:
+                dq.append((x.next(ch), y.c[ch]))
 
 
             
@@ -634,3 +638,123 @@ if __name__=="__main__":
             v = bs.query_kth(i,j,k)
             if v!=xx[k-1]: print("wrong", i,j,xx,k,v)
             # print(i,j,sorted(l[i:j+1]), k, bs.query_kth(i,j,k))
+
+
+def zfunction(s):
+    n=len(s)
+    z,left,right=[0]*n, 0, 0
+    for i in range(1,n):
+        z[i]=max(0, min(right-i, z[i-left]))
+        while i+z[i]<n and s[i+z[i]]==s[z[i]]: z[i]+=1
+        if i+z[i]>right: left, right = i, i+z[i]
+    return z
+
+
+class FenwickTree:
+    def __init__(self, l):
+        tree=[0] + l
+        for i in range(1, len(tree)):
+            j = i+(i&-i)
+            if j<len(tree): tree[j]+=tree[i]
+        self.l=l
+        self.tree=tree
+    def update(self, i, v):
+        dif = v - self.l[i]
+        self.l[i]=v
+        i+=1
+        while i<len(self.tree):
+            self.tree[i]+=dif
+            i+=i&-i
+    def sum(self, i):
+        res,i = 0, i+1
+        while i>0:
+            res += self.tree[i]
+            i-=i&-i
+        return res
+    
+
+
+class ListDec:
+    def __init__(self):
+        self.l=[]
+        self.range = {}
+    
+    def _inc_range_(self, i):
+        v = self.l[i]
+        if v not in self.range:
+            self.range[v]=[i,i]
+        else:
+            lo,hi = self.range[v]
+            if lo-1==i: lo-=1
+            elif hi+1==i: hi+=1
+            self.range[v] = [lo,hi]
+    def _dec_range_(self, v):
+        if v==0: return 0
+        lo,hi = self.range[v]
+        if lo>=len(self.l) or self.l[lo]!=v: lo+=1
+        elif hi>=len(self.l) or self.l[hi]!=v: hi-=1
+        if lo>hi: self.range.pop(v)
+        else: self.range[v]=[lo,hi]
+    
+    def inc(self, v):
+        if v==0:
+            self.l.append(1)
+            self._inc_range_(len(self.l)-1)
+        else:
+            i,_ = self.range[v]
+            self.l[i]+=1
+            self._inc_range_(i)
+            self._dec_range_(self.l[i]-1)
+    def dec(self, v):
+        if v==1:
+            self.l.pop()
+            self._dec_range_(1)
+        else:
+            _, i = self.range[v]
+            self.l[i]-=1
+            self._inc_range_(i)
+            self._dec_range_(self.l[i]+1)
+class AllOne:
+
+    def __init__(self):
+        self.listdec = ListDec()
+        self.c = defaultdict(int)
+        self.m = defaultdict(set)
+    
+    def _fix_(self, key):
+        c = self.c[key]
+        self.m[c-1].discard(key)
+        self.m[c].add(key)
+        self.m[c+1].discard(key)
+    def _get_(self, v):
+        for key in self.m[v]:
+            return key
+        
+    def inc(self, key: str) -> None:        
+        self.listdec.inc(self.c[key])
+        self.c[key]+=1
+        self._fix_(key)
+
+    def dec(self, key: str) -> None:
+        self.listdec.dec(self.c[key])
+        self.c[key]-=1
+        self._fix_(key)
+        
+    def getMaxKey(self) -> str:
+        if not self.listdec.l: return ''
+        return self._get_(self.listdec.l[0])
+        
+
+    def getMinKey(self) -> str:
+        if not self.listdec.l: return ''
+        return self._get_(self.listdec.l[-1])
+
+        
+
+
+# Your AllOne object will be instantiated and called as such:
+# obj = AllOne()
+# obj.inc(key)
+# obj.dec(key)
+# param_3 = obj.getMaxKey()
+# param_4 = obj.getMinKey()

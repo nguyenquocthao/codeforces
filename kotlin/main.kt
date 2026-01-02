@@ -1,8 +1,9 @@
 import java.util.*
 import kotlin.math.*
 import kotlin.text.trim
-import divceil
-import myPrint
+import kotlin.comparisons.maxOf
+// import divceil
+// import myPrint
 // import bitLength64
 
 
@@ -42,37 +43,39 @@ val K = 10
 
 fun main() {
     repeat(readInt()){
-        var (n,k) = readSlice<Int>()
-        myPrint(*run(n,k).toTypedArray())
+        var (n,k) = readSlice<Long>()
+        println(run(readSlice<Long>(), k))
+        // var (n,k) = readSlice<Int>()
+        // myPrint(*run(n,k).toTypedArray())
 
     }
 
 
 }
 
-fun run(n:Int, k:Int): IntArray{
-    fun dp(start:Int, k2:Int):IntArray{
-        if (k2==0 || start==n){
-            return intArrayOf(-1)
+
+fun run(a: List<Long>, power: Long): Int{
+    // println(a)
+    // println(power)
+    var a = a.sorted()
+    fun dp(i:Int, p:Long, ngreen: Int, nblue: Int):Int{
+        var p = p
+        var i = i
+        while (i<a.size && p>a[i]){
+            p+=a[i]/2
+            i+=1
         }
-        if (k2==1){
-            return (start..n).toList().toIntArray()
+        if (i>=a.size){
+            return i
         }
-        var nele = n-start+1
-        var start2 = start + (nele/2)
-        var x = dp(start2, k2-1)
-        if (x[0]==-1){
-            return x
+        var res = i
+        if (ngreen>0){
+            res = maxOf(res, dp(i, p*2, ngreen-1, nblue))
         }
-        var y = (start..(start2-1)).toList().toIntArray()
-        var l = mutableListOf<Int>()
-        for ((i,v) in x.withIndex()){
-            l.add(v)
-            if (i<y.size){
-                l.add(y[i])
-            }
+        if (nblue>0){
+            res=maxOf(res, dp(i, p*3, ngreen, nblue-1))
         }
-        return l.toIntArray()
+        return res
     }
-    return dp(1, k)
+    return dp(0,power,2,1)
 }

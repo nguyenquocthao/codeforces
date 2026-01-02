@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 )
@@ -117,17 +117,17 @@ func reverseStr(s string) string {
 	return string(rns)
 }
 
-func Unique[T comparable](l []T) []T {
-	m := map[T]bool{}
-	for _, v := range l {
-		m[v] = true
-	}
-	res := make([]T, 0, len(l))
-	for v := range m {
-		res = append(res, v)
-	}
-	return res
-}
+// func Unique[T comparable](l []T) []T {
+// 	m := map[T]bool{}
+// 	for _, v := range l {
+// 		m[v] = true
+// 	}
+// 	res := make([]T, 0, len(l))
+// 	for v := range m {
+// 		res = append(res, v)
+// 	}
+// 	return res
+// }
 
 func divceil[T int | int64](a, b T) T {
 	res := a / b
@@ -241,11 +241,49 @@ func Contains[T comparable](l []T, x T) bool {
 	return false
 }
 
-// const MOD = 998_244_353
+type Stack[T any] struct {
+	data []T
+	i    int
+}
 
-const MOD = 1_000_000_007
+func (s *Stack[T]) Top() T {
+	return s.data[s.i-1]
+}
 
-// const maxn = 200_000
+func (s *Stack[T]) Len() int {
+	return s.i
+}
+
+func (s *Stack[T]) Push(v T) {
+	if s.i == len(s.data) {
+		s.data = append(s.data, v)
+	} else {
+		s.data[s.i] = v
+	}
+	s.i += 1
+}
+
+func (s *Stack[T]) Pop() T {
+	s.i -= 1
+	if s.i < 0 {
+		panic("Invalid stack pop: stack is empty")
+	}
+	return s.data[s.i]
+}
+
+func (s *Stack[T]) ToList() []T {
+	return s.data[:s.i]
+}
+
+func NewStack[T any]() *Stack[T] {
+	return &Stack[T]{data: []T{}, i: 0}
+}
+
+const MOD = 998244353
+
+// const MOD = 1000000007
+
+// const maxn = 1000000
 
 // var FAC = make([]int64, maxn+1)
 // var IFAC = make([]int64, maxn+1)
@@ -258,6 +296,208 @@ const MOD = 1_000_000_007
 // 		IFAC[i] = mod_inverse(FAC[i])
 // 	}
 // }
+
+// func pow(x, n int64) int64 {
+// 	x = x % MOD
+// 	res := int64(1)
+// 	for n > 0 {
+// 		if n%2 == 1 {
+// 			res = (res * x) % MOD
+// 		}
+// 		x = (x * x) % MOD
+// 		n = n / 2
+// 	}
+// 	return res
+// }
+
+// func mod_inverse(x int64) int64 {
+// 	return pow(x, MOD-2)
+// }
+
+// func comb(n, k int64) int64 {
+// 	if n < 0 || k > n {
+// 		return 0
+// 	}
+// 	inv := (IFAC[k] * IFAC[n-k]) % MOD
+// 	return (FAC[n] * inv) % MOD
+// }
+
+// func mod[T int | int64](v T) T {
+// 	res := v % MOD
+// 	if res < 0 {
+// 		res += MOD
+// 	}
+// 	return res
+// }
+
+func getlex(a []int) []int {
+	maxv := Max(a...)
+	target := 2*maxv + 1
+	canrm := Sum(a...) - target
+	if canrm < 0 {
+		return []int{}
+	}
+	st := NewStack[int]()
+	for _, v := range a {
+		for st.Len() > 0 && st.Top() < v && st.Top() <= canrm {
+			canrm -= st.Pop()
+		}
+		st.Push(v)
+	}
+	return st.ToList()
+}
+
+func lexmax(a, b []int) []int {
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	for i, v := range a {
+		if v < b[i] {
+			return b
+		} else if v > b[i] {
+			return a
+		}
+	}
+	return b
+}
+
+type UnionFind []int
+
+func (u UnionFind) Find(x int) int {
+	if u[x] != x {
+		u[x] = u.Find(u[x])
+	}
+	return u[x]
+}
+
+func (u UnionFind) Union(x, y int) {
+	u[u.Find(y)] = u.Find(x)
+}
+
+func (u UnionFind) NGroup() int {
+	res := 0
+	for i, v := range u {
+		if i == v {
+			res++
+		}
+	}
+	return res
+}
+
+func (u UnionFind) GetRoots() []int {
+	res := make([]int, 0, len(u))
+	for i, v := range u {
+		if i == v {
+			res = append(res, i)
+		}
+	}
+	return res
+}
+
+type Deque[T any] struct {
+	Data       []T
+	Start, End int
+}
+
+func (dq *Deque[T]) Len() int {
+	return dq.End - dq.Start
+}
+
+func NewDeque[T any](l []T, capacity int) *Deque[T] {
+	res := &Deque[T]{}
+	if capacity < 2 {
+		capacity = 2
+	}
+	res.Start = 0
+	res.End = len(l)
+	if len(l) >= capacity {
+		res.Data = l
+	} else {
+		res.Data = make([]T, capacity)
+		copy(res.Data, l)
+	}
+	// fmt.Println(res)
+	return res
+}
+
+func (dq *Deque[T]) upgradeFull() {
+	if dq.Len() < len(dq.Data) {
+		return
+	}
+	// fmt.Println("upgrade", dq)
+	data := append(dq.Data[dq.Start:], dq.Data[:dq.Start]...)
+	dq.Start = 0
+	dq.End = len(data)
+	dq.Data = make([]T, 2*len(data)+1)
+	copy(dq.Data, data)
+}
+
+func (dq *Deque[T]) First() T {
+	// fmt.Println(dq)
+	return dq.Data[dq.Start]
+}
+func (dq *Deque[T]) Last() T {
+	// fmt.Println(dq)
+	j := dq.End - 1
+	if j >= len(dq.Data) {
+		j -= len(dq.Data)
+	}
+	return dq.Data[j]
+}
+
+func (dq *Deque[T]) At(i int) T {
+	i += dq.Start
+	if i >= len(dq.Data) {
+		i -= len(dq.Data)
+	}
+	return dq.Data[i]
+}
+
+func (dq *Deque[T]) AppendLeft(v T) {
+	dq.upgradeFull()
+	if dq.Start == 0 {
+		dq.Start, dq.End = dq.Start+len(dq.Data), dq.End+len(dq.Data)
+	}
+	dq.Start -= 1
+	dq.Data[dq.Start] = v
+}
+
+func (dq *Deque[T]) Append(v T) {
+	dq.upgradeFull()
+	j := dq.End
+	if j >= len(dq.Data) {
+		j -= len(dq.Data)
+	}
+	dq.Data[j] = v
+	dq.End += 1
+}
+
+func (dq *Deque[T]) PopLeft() T {
+	res := dq.First()
+	dq.Start += 1
+	if dq.Start == len(dq.Data) {
+		dq.Start, dq.End = dq.Start-len(dq.Data), dq.End-len(dq.Data)
+	}
+	return res
+}
+
+func (dq *Deque[T]) Pop() T {
+	res := dq.Last()
+	dq.End -= 1
+	return res
+}
+
+func (dq Deque[T]) ToList() []T {
+	res := make([]T, dq.Len())
+	for i := range res {
+		res[i] = dq.At(i)
+	}
+	return res
+}
+
+func (dq Deque[T]) String() string {
+	return fmt.Sprint(dq.ToList())
+}
 
 func pow(x, n int64) int64 {
 	x = x % MOD
@@ -276,14 +516,6 @@ func mod_inverse(x int64) int64 {
 	return pow(x, MOD-2)
 }
 
-// func comb(n, k int64) int64 {
-// 	if n < 0 || k > n {
-// 		return 0
-// 	}
-// 	inv := (IFAC[k] * IFAC[n-k]) % MOD
-// 	return (FAC[n] * inv) % MOD
-// }
-
 func mod[T int | int64](v T) T {
 	res := v % MOD
 	if res < 0 {
@@ -292,83 +524,111 @@ func mod[T int | int64](v T) T {
 	return res
 }
 
-// type UnionFind []int
-
-// func (u UnionFind) Find(x int) int {
-// 	if u[x] != x {
-// 		u[x] = u.Find(u[x])
-// 	}
-// 	return u[x]
-// }
-
-// func (u UnionFind) Union(x, y int) {
-// 	u[u.Find(y)] = u.Find(x)
-// }
-
-// func (u UnionFind) NGroup() int {
-// 	res := 0
-// 	for i, v := range u {
-// 		if i == v {
-// 			res++
-// 		}
-// 	}
-// 	return res
-// }
-
-// func (u UnionFind) GetRoots() []int {
-// 	res := make([]int, 0, len(u))
-// 	for i, v := range u {
-// 		if i == v {
-// 			res = append(res, i)
-// 		}
-// 	}
-// 	return res
-// }
-
-//	type Item struct {
-//		Start, End int
-//	}
-
-func run(n, k int64) int64 {
-	if k == 1 {
-		return n % MOD
-	}
-	x, y, count := int64(1), int64(1), int64(2)
-	for y%k > 0 {
-		x, y, count = y, (x+y)%k, count+1
-	}
-	return mod(count * mod(n))
-
+func nbitat(x int64, i int) int64 {
+	p := int64(1) << i
+	a, b := x/(2*p), x%(2*p)
+	return a*p + max(0, b-p+1)
 }
 
-var debug = false
+func comb2(n int64) int64 {
+	return mod(n * (n - 1) / 2)
+}
+
+type Heap []int64
+
+func (h Heap) Len() int           { return len(h) }
+func (h Heap) Less(i, j int) bool { return h[i] < h[j] }
+func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *Heap) Push(x any) {
+	// Push and Pop use pointer receivers because they modify the slice's length,
+	// not just its contents.
+	*h = append(*h, x.(int64))
+}
+
+func (h *Heap) Pop() any {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
+func query(a, b string) bool {
+	l := strings.Split(readString(), " ")
+	for _, s := range l[1:] {
+		if strings.Contains(s, a) {
+			return strings.Contains(s, b)
+		}
+	}
+	return false
+}
+
+func acc(l []int64) []int64 {
+	res := make([]int64, len(l)+1)
+	for i, v := range l {
+		res[i+1] = (res[i] + v) % MOD
+	}
+	return res
+}
+
+func get(prev []int64, i, d int) int64 {
+	lo := max(0, i-d)
+	hi := min(len(prev)-1, i+d+1)
+	return mod(prev[hi] - prev[lo])
+}
+
+func run(n, m, k int) int {
+	r := divceil(k, n)
+	empty := m - r
+	return divceil(m+1, empty+1) - 1
+}
 
 func main() {
-	// for i := 0; i < 60; i++ {
-	// 	for j := i; j < 60; j++ {
-	// 		fmt.Println(i, j, dp(i, j))
+	// x := makeRange(0, 21)
+	// for i := 1; i <= 10; i++ {
+	// 	y := []int{}
+	// 	for _, v := range x {
+	// 		y = append(y, v%i)
 	// 	}
+	// 	fmt.Println(i, y)
 	// }
+
 	defer func() {
 		if r := recover(); r != nil {
-			// fmt.Println(data)
-
-			buf := make([]byte, 1024)
-			n := runtime.Stack(buf, false)
+			fmt.Println(r)
+			debug.PrintStack()
+			// buf := make([]byte, 1024)
+			// n := runtime.Stack(buf, false)
 			// fmt.Println("Panic recovered:", r)
-
-			fmt.Println(strings.ReplaceAll(string(buf[:n]), "\n", " "))
+			// runtime.Stack()
+			// fmt.Println(strings.ReplaceAll(string(buf[:n]), "\n", " "))
 		}
 	}()
-	// cached := make([]int64, 100_000+1)
-	// inv2 := mod_inverse(2)
-	// for i := 2; i < len(cached); i++ {
-	// 	cached[i] = mod(1 + mod(cached[i/2]+cached[(i+1)/2])*inv2)
+	// for n := 1000; n < 1001; n++ {
+	// 	fmt.Println(n, generate(n), len(generate(n)))
 	// }
+	// fmt.Println(permutation([]int{0, 1, 2}))
+	// ntest := 1
+	// run(1073741824)
+	// for i := 0; i < 100; i++ {
+	// 	var x int = 1 << i
+	// 	fmt.Println(i, x)
+	// }
+	// for i := 0; i < 10; i++ {
+	// 	fmt.Println(i, Catalan(i))
+	// }
+	// info := NewInfo()
+	// for i := 0; i < 3; i++ {
+	// 	v := info.Add(2)
+	// 	// fmt.Println(info.st.ToList(), info.n, v)
+	// }
+
 	ntest := readInt()
+	// ntest := 1
 	// debug = ntest == 10000
 	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt64()
-		fmt.Println(run(l[0], l[1]))
+		l := readSliceInt()
+		fmt.Println(run(l[0], l[1], l[2]))
 	}
 }

@@ -402,3 +402,35 @@ func CatesianTree(a []int64) *CTNode {
 	}
 	return st.ToList()[0]
 }
+
+type CheckSet struct {
+	Marked []bool
+	S      []int
+}
+
+func NewCheckSet(size int) *CheckSet {
+	return &CheckSet{make([]bool, size), []int{}}
+}
+
+func (cs *CheckSet) Len() int {
+	return len(cs.S)
+}
+
+func (cs *CheckSet) Add(i int) {
+	if !cs.Marked[i] {
+		cs.Marked[i] = true
+		cs.S = append(cs.S, i)
+	}
+}
+
+func (cs *CheckSet) Top() int {
+	return cs.S[len(cs.S)-1]
+}
+
+func (cs *CheckSet) Pop() int {
+	last := len(cs.S) - 1
+	res := cs.S[last]
+	cs.S = cs.S[:last]
+	cs.Marked[res] = false
+	return res
+}

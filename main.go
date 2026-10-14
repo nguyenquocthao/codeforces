@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -162,8 +163,8 @@ func divneg[T int | int64](a, b T) T {
 	return res
 }
 
-func accumulate(a []int64) []int64 {
-	res := make([]int64, len(a)+1)
+func Accumulate[T int | int64](a []T) []T {
+	res := make([]T, len(a)+1)
 	for i, v := range a {
 		res[i+1] = res[i] + v
 	}
@@ -281,115 +282,29 @@ func NewStack[T any]() *Stack[T] {
 
 const MOD = 998244353
 
-// const MOD = 1000000007
+// const MOD = 1_000_000_007
 
-// const maxn = 1000000
-
-// var FAC = make([]int64, maxn+1)
-// var IFAC = make([]int64, maxn+1)
-
-// func init() {
-// 	FAC[0], FAC[1] = 1, 1
-// 	IFAC[0], IFAC[1] = 1, 1
-// 	for i := int64(2); i < maxn+1; i++ {
-// 		FAC[i] = (i * FAC[i-1]) % MOD
-// 		IFAC[i] = mod_inverse(FAC[i])
-// 	}
-// }
-
-// func pow(x, n int64) int64 {
-// 	x = x % MOD
-// 	res := int64(1)
-// 	for n > 0 {
-// 		if n%2 == 1 {
-// 			res = (res * x) % MOD
-// 		}
-// 		x = (x * x) % MOD
-// 		n = n / 2
-// 	}
-// 	return res
-// }
-
-// func mod_inverse(x int64) int64 {
-// 	return pow(x, MOD-2)
-// }
-
-// func comb(n, k int64) int64 {
-// 	if n < 0 || k > n {
-// 		return 0
-// 	}
-// 	inv := (IFAC[k] * IFAC[n-k]) % MOD
-// 	return (FAC[n] * inv) % MOD
-// }
-
-// func mod[T int | int64](v T) T {
-// 	res := v % MOD
-// 	if res < 0 {
-// 		res += MOD
-// 	}
-// 	return res
-// }
-
-func getlex(a []int) []int {
-	maxv := Max(a...)
-	target := 2*maxv + 1
-	canrm := Sum(a...) - target
-	if canrm < 0 {
-		return []int{}
-	}
-	st := NewStack[int]()
-	for _, v := range a {
-		for st.Len() > 0 && st.Top() < v && st.Top() <= canrm {
-			canrm -= st.Pop()
+func pow(x, n int64) int64 {
+	x = x % MOD
+	res := int64(1)
+	for n > 0 {
+		if n%2 == 1 {
+			res = (res * x) % MOD
 		}
-		st.Push(v)
-	}
-	return st.ToList()
-}
-
-func lexmax(a, b []int) []int {
-	if len(a) > len(b) {
-		a, b = b, a
-	}
-	for i, v := range a {
-		if v < b[i] {
-			return b
-		} else if v > b[i] {
-			return a
-		}
-	}
-	return b
-}
-
-type UnionFind []int
-
-func (u UnionFind) Find(x int) int {
-	if u[x] != x {
-		u[x] = u.Find(u[x])
-	}
-	return u[x]
-}
-
-func (u UnionFind) Union(x, y int) {
-	u[u.Find(y)] = u.Find(x)
-}
-
-func (u UnionFind) NGroup() int {
-	res := 0
-	for i, v := range u {
-		if i == v {
-			res++
-		}
+		x = (x * x) % MOD
+		n = n / 2
 	}
 	return res
 }
 
-func (u UnionFind) GetRoots() []int {
-	res := make([]int, 0, len(u))
-	for i, v := range u {
-		if i == v {
-			res = append(res, i)
-		}
+func mod_inverse(x int64) int64 {
+	return pow(x, MOD-2)
+}
+
+func mod[T int | int64](v T) T {
+	res := v % MOD
+	if res < 0 {
+		res += MOD
 	}
 	return res
 }
@@ -499,89 +414,102 @@ func (dq Deque[T]) String() string {
 	return fmt.Sprint(dq.ToList())
 }
 
-func pow(x, n int64) int64 {
-	x = x % MOD
-	res := int64(1)
-	for n > 0 {
-		if n%2 == 1 {
-			res = (res * x) % MOD
-		}
-		x = (x * x) % MOD
-		n = n / 2
+type UnionFind []int
+
+func (u UnionFind) Find(x int) int {
+	if u[x] != x {
+		u[x] = u.Find(u[x])
 	}
-	return res
+	return u[x]
 }
 
-func mod_inverse(x int64) int64 {
-	return pow(x, MOD-2)
+func (u UnionFind) Union(x, y int) {
+	u[u.Find(y)] = u.Find(x)
 }
 
-func mod[T int | int64](v T) T {
-	res := v % MOD
-	if res < 0 {
-		res += MOD
-	}
-	return res
-}
-
-func nbitat(x int64, i int) int64 {
-	p := int64(1) << i
-	a, b := x/(2*p), x%(2*p)
-	return a*p + max(0, b-p+1)
-}
-
-func comb2(n int64) int64 {
-	return mod(n * (n - 1) / 2)
-}
-
-type Heap []int64
-
-func (h Heap) Len() int           { return len(h) }
-func (h Heap) Less(i, j int) bool { return h[i] < h[j] }
-func (h Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *Heap) Push(x any) {
-	// Push and Pop use pointer receivers because they modify the slice's length,
-	// not just its contents.
-	*h = append(*h, x.(int64))
-}
-
-func (h *Heap) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
-func query(a, b string) bool {
-	l := strings.Split(readString(), " ")
-	for _, s := range l[1:] {
-		if strings.Contains(s, a) {
-			return strings.Contains(s, b)
+func (u UnionFind) NGroup() int {
+	res := 0
+	for i, v := range u {
+		if i == v {
+			res += 1
 		}
 	}
-	return false
+	return res
 }
 
-func acc(l []int64) []int64 {
-	res := make([]int64, len(l)+1)
-	for i, v := range l {
-		res[i+1] = (res[i] + v) % MOD
+func (u UnionFind) GetRoots() []int {
+	res := make([]int, 0, len(u))
+	for i, v := range u {
+		if i == v {
+			res = append(res, i)
+		}
 	}
 	return res
 }
 
-func get(prev []int64, i, d int) int64 {
-	lo := max(0, i-d)
-	hi := min(len(prev)-1, i+d+1)
-	return mod(prev[hi] - prev[lo])
+func Filter[T any](l []T, f func(v T) bool) []T {
+	res := []T{}
+	for _, v := range l {
+		if f(v) {
+			res = append(res, v)
+		}
+	}
+	return res
 }
 
-func run(n, m, k int) int {
-	r := divceil(k, n)
-	empty := m - r
-	return divceil(m+1, empty+1) - 1
+func cal(a []int) (int, int) {
+	maxv, minv, cur := 0, 0, 0
+	for _, v := range a {
+		cur += v
+		maxv = max(maxv, cur)
+		minv = min(minv, cur)
+	}
+	return maxv, minv
+}
+
+func calsub(a []int) (int, int) {
+	maxv, minv, cur := 0, 0, 0
+	submax, submin := 0, 0
+	for _, v := range a {
+		cur += v
+		maxv = max(maxv, cur)
+		minv = min(minv, cur)
+		submax = max(submax, cur-minv)
+		submin = min(submin, cur-maxv)
+	}
+	return submax, submin
+}
+
+func run(a []int) []int {
+	ii := -1
+	for i, v := range a {
+		if v < -1 || v > 1 {
+			ii = i
+			break
+		}
+	}
+	if ii < 0 {
+		maxv, minv := calsub(a)
+		return makeRange(minv, maxv+1)
+	}
+	aa := a[:ii]
+	slices.Reverse(aa)
+	max0, min0 := cal(aa)
+	val := a[ii]
+	max1, min1 := cal(a[ii+1:])
+	ra := makeRange(val+min0+min1, val+max0+max1+1)
+	max0, min0 = calsub(aa)
+	// fmt.Println("calsub", aa, max0, min0)
+	max1, min1 = calsub(a[ii+1:])
+	rb := makeRange(min(min0, min1), max(max0, max1)+1)
+	if ra[0] > rb[0] {
+		ra, rb = rb, ra
+	}
+	for len(ra) > 0 && ra[len(ra)-1] >= rb[0] {
+		ra = ra[:len(ra)-1]
+	}
+	ra = append(ra, rb...)
+	return ra
 }
 
 func main() {
@@ -623,12 +551,15 @@ func main() {
 	// 	v := info.Add(2)
 	// 	// fmt.Println(info.st.ToList(), info.n, v)
 	// }
+	// fmt.Println(factors[:20])
 
 	ntest := readInt()
 	// ntest := 1
 	// debug = ntest == 10000
 	for nt := 0; nt < ntest; nt++ {
-		l := readSliceInt()
-		fmt.Println(run(l[0], l[1], l[2]))
+		readInt()
+		res := run(readSliceInt())
+		fmt.Println(len(res))
+		printSlice(res)
 	}
 }

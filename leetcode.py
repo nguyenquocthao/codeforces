@@ -383,7 +383,13 @@ class Manacher:
 
 
 def build_lcp_array(s, suffix_array):
+    """ stores the lengths of the longest common prefixes (LCPs) between all pairs of consecutive suffixes in a sorted suffix array. 
+        s = "banana#"
+        suffix_array=[6,5,3,1,0,4,2]
+        lcp_array=[0,0,1,3,0,0,2]
+    """
     n=len(s)
+    # map s[i:] -> order of s[i:] in the suffix array
     suffix_index=[0]*n
     for i,v in enumerate(suffix_array): suffix_index[v]=i
     lcp=[0]*n
@@ -749,8 +755,42 @@ class AllOne:
         if not self.listdec.l: return ''
         return self._get_(self.listdec.l[-1])
 
-        
 
+def project_point(a, d, b)->float:
+    """ return t value with projectiong point (ax + t*dx, ay + t*dy) """
+    ax,ay = a
+    dx,dy = d
+    bx,by = b
+    if dx==0 and dy==0: return 0
+    return ((bx-ax)*dx + (by-ay)*dy)/(dx*dy + dy*dy)
+    
+        
+def segment_intersects_circle(a, b, center, radius):
+    """
+    a, b: (x, y) endpoints of the line segment
+    center: (x, y) circle center
+    radius: circle radius
+
+    Returns True if the segment touches or intersects the circle.
+    """
+    ax, ay = a
+    bx, by = b
+    cx, cy = center
+
+    dx = bx - ax
+    dy = by - ay
+    
+    t = project_point(a, (dx,dy), center)
+
+    # Clamp projection to the segment.
+    t = max(0.0, min(1.0, t))
+
+    closest_x = ax + t * dx
+    closest_y = ay + t * dy
+
+    dist_sq = (closest_x - cx) ** 2 + (closest_y - cy) ** 2
+
+    return dist_sq <= radius ** 2
 
 # Your AllOne object will be instantiated and called as such:
 # obj = AllOne()
@@ -758,3 +798,43 @@ class AllOne:
 # obj.dec(key)
 # param_3 = obj.getMaxKey()
 # param_4 = obj.getMinKey()
+
+def fast_fibonacci(n):
+    """
+        Formula:
+        Even index: F(2n) = F(n) * (2F(n + 1) - F(n))
+        Odd index: F(2n + 1) = F(n) ^ 2 + F(n + 1) ^ 2
+    """
+    M = 10 ** 9 + 7
+    a, b = 0, 1
+    for bit in bin(n)[2:]:
+        a, b = a * (2 * b - a) % M, (a * a + b * b) % M
+        if bit == '1':
+            a, b = b, (a + b) % M
+    return 2 * a % M
+
+
+
+
+def build_palin(s):
+    ns = len(s)
+    a='#' + '#'.join(s)+'#'
+    n=len(a)
+    data=[0]*len(a)
+    lo,hi=0,0
+    for i in range(n):
+        if hi>i: data[i] = min(hi-i, data[lo+hi-i])
+        while i-data[i]>=0 and i+data[i]<n and a[i-data[i]]==a[i+data[i]]: data[i]+=1
+        if i+data[i]>hi: lo,hi = i-data[i], i+data[i]
+    pre,suf = [1]*len(s), [1]*len(s)
+    for i,v in enumerate(data):
+        x,y = (i-v+1)//2, (i+v-1)//2
+        if x<y:
+            pre[x] = max(pre[x], y-x)
+            suf[y-1] = max(suf[y-1], y-x)
+    for i in range(1, ns):
+        pre[i] = max(pre[i], pre[i-1] - 2)
+    for i in range(ns-2, -1, -1):
+        suf[i] = max(suf[i], suf[i+1] - 2)
+    # print(s, pre, suf)
+    return pre,suf
